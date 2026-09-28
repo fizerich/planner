@@ -7,7 +7,6 @@
     warning: { key: 'warning', label: 'Upcoming', fg: '#F0DB5E', bg: '#322C10' },
     ok: { key: 'ok', label: 'Active', fg: '#52E0A8', bg: '#10301F' },
   };
-  const THRESHOLD_LABELS = { d30: '1 month before expiry', d14: '2 weeks before expiry', d1: '1 day before expiry' };
   const ACCENT_OPTIONS = ['#7C6FEA', '#4FD1C5', '#F07EA6', '#F5A85A'];
   const VIEWS = [
     ['dashboard', 'Dashboard'],
@@ -75,14 +74,15 @@
     newClinicName: '',
     newClinicCode: '',
     newLicenseTypeName: '',
+    newThreshold: { amount: '', unit: 'days' },
     toast: null,
-    busySendId: null,
     busyTest: false,
     busyPushTest: false,
     sheetBusy: false,
     pushPermission: (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported',
     pushSubscribed: false,
     pushBusy: false,
+    activityExpanded: false,
   };
 
   function setNested(obj, path, value) {
@@ -462,9 +462,7 @@
 
   function renderReminders() {
     const s = state;
-    const enriched = allEnrichedLicenses();
-    const dueReminders = enriched.filter((l) => l.statusKey === 'overdue' || l.statusKey === 'critical');
-    const managerRows = s.clinics.map((c) => ({ code: c.code, id: c.id, phone: s.managerPhones[c.id] || '' }));
+    const visibleActivity = ui.activityExpanded ? s.activityLog : s.activityLog.slice(0, 3);
 
     return `
       <div class="view-header">
@@ -475,7 +473,7 @@
       </div>
       <div class="reminders-wrap scrollarea">
         <div class="reminders-left">
-          <div class="card">
+          <div class="card card-hover">
             <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Push notifications on this device</div>
             <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin-bottom:10px">
               ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet — see Settings.'}
@@ -488,43 +486,28 @@
             </div>
           </div>
 
-          <div class="card">
-            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Needs a reminder now</div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              ${dueReminders.map((l) => `
-                <div class="reminder-row">
-                  <div style="min-width:0">
-                    <div style="font:500 12.5px 'Work Sans';color:var(--text-primary)">${esc(l.type)}</div>
-                    <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:2px">${esc(l.clinicCode)} &middot; ${l.daysLabel}</div>
-                  </div>
-                  <button class="pill-btn pill-wa" data-action="send-reminder" data-id="${l.id}" ${ui.busySendId === l.id ? 'disabled' : ''}>${ui.busySendId === l.id ? 'Sending…' : 'Send WhatsApp'}</button>
-                </div>`).join('') || '<div class="empty-note">Nothing due right now — all caught up.</div>'}
-            </div>
-          </div>
-
-          <div class="card">
+          <div class="card card-hover">
             <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Owner WhatsApp number</div>
             <input class="field" type="text" value="${esc(s.ownerPhone)}" style="width:100%" data-action="set-owner-phone" />
-            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:8px">All expiry &amp; overdue alerts are sent here by default.</div>
+            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:8px">All expiry &amp; overdue alerts are sent here.</div>
           </div>
 
-          <div class="card">
+          <div class="card card-hover">
             <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Alert schedule</div>
-            ${Object.keys(THRESHOLD_LABELS).map((key) => `
-              <label style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer">
-                <input type="checkbox" ${s.thresholds[key] ? 'checked' : ''} data-action="toggle-threshold" data-id="${key}" style="width:16px;height:16px" />
-                <span style="font:400 13px 'Work Sans';color:var(--text-primary)">${THRESHOLD_LABELS[key]}</span>
-              </label>`).join('')}
-          </div>
-
-          <div class="card">
-            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Per-clinic manager numbers</div>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              ${managerRows.map((m) => `
-                <div class="manager-row">
-                  <span class="manager-code">${esc(m.code)}</span>
-                  <input class="field" type="text" placeholder="+60 ..." value="${esc(m.phone)}" style="flex:1" data-action="set-manager-phone" data-id="${m.id}" />
-                </div>`).join('')}
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+              ${s.alertThresholds.map((t) => `
+                <div class="threshold-row">
+                  <span style="font:400 13px 'Work Sans';color:var(--text-primary)">${t.amount} ${t.unit === 'months' ? (t.amount === 1 ? 'month' : 'months') : (t.amount === 1 ? 'day' : 'days')} before expiry</span>
+                  <span class="threshold-remove" data-action="remove-alert-threshold" data-id="${t.id}">&times;</span>
+                </div>`).join('') || '<div class="empty-note">No alert thresholds set — add one below.</div>'}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="field" type="number" min="1" placeholder="e.g. 7" value="${esc(ui.newThreshold.amount)}" style="width:80px" data-action="set-new-threshold-amount" />
+              <select class="field" data-action="set-new-threshold-unit">
+                <option value="days" ${ui.newThreshold.unit === 'days' ? 'selected' : ''}>days before</option>
+                <option value="months" ${ui.newThreshold.unit === 'months' ? 'selected' : ''}>months before</option>
+              </select>
+              <button class="pill-btn pill-accent" data-action="add-alert-threshold">+ Add</button>
             </div>
           </div>
 
@@ -535,12 +518,13 @@
         <div class="reminders-right">
           <div class="section-label">Recent activity</div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            ${s.activityLog.map((a) => `
+            ${visibleActivity.map((a) => `
               <div class="activity-item">
                 <div style="font:500 12.5px 'Work Sans';color:var(--text-primary)">${esc(a.text)}</div>
                 <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:3px">${esc(a.when)}${a.automated ? ' &middot; automatic' : ''}</div>
               </div>`).join('') || '<div class="empty-note">No activity yet.</div>'}
           </div>
+          ${s.activityLog.length > 3 ? `<button class="pill-btn pill-outline" style="margin-top:10px" data-action="toggle-activity-expanded">${ui.activityExpanded ? 'Show less' : 'See all (' + s.activityLog.length + ')'}</button>` : ''}
         </div>
       </div>`;
   }
@@ -690,18 +674,18 @@
           break;
         case 'remove-license-type':
           await mutate(() => api('DELETE', '/api/license-types/' + id)); break;
-        case 'toggle-threshold': {
-          const patch = {}; patch[id] = !state.thresholds[id];
-          await mutate(() => api('PATCH', '/api/settings', { thresholds: patch }));
+        case 'add-alert-threshold': {
+          const amount = Number(ui.newThreshold.amount);
+          if (!amount || amount <= 0) { showToast('error', 'Enter a number greater than 0.'); break; }
+          await mutate(() => api('POST', '/api/alert-thresholds', { amount, unit: ui.newThreshold.unit }));
+          ui.newThreshold = { amount: '', unit: ui.newThreshold.unit };
+          render();
           break;
         }
-        case 'send-reminder':
-          ui.busySendId = id; render();
-          try {
-            const result = await mutate(() => api('POST', '/api/reminders/send/' + id));
-            showToast(result.ok ? 'success' : 'error', result.ok ? 'WhatsApp reminder sent.' : ('Send failed: ' + result.error));
-          } finally { ui.busySendId = null; render(); }
-          break;
+        case 'remove-alert-threshold':
+          await mutate(() => api('DELETE', '/api/alert-thresholds/' + id)); break;
+        case 'toggle-activity-expanded':
+          ui.activityExpanded = !ui.activityExpanded; render(); break;
         case 'send-test':
           ui.busyTest = true; render();
           try {
@@ -751,20 +735,12 @@
         case 'set-new-license-type-name': ui.newLicenseTypeName = value; break;
         case 'set-owner-phone':
           await mutate(() => api('PATCH', '/api/settings', { ownerPhone: value })); break;
-        case 'set-manager-phone': {
-          const patch = {}; patch[id] = value;
-          await mutate(() => api('PATCH', '/api/settings', { managerPhones: patch }));
-          break;
-        }
         case 'clinic-code-change':
           await mutate(() => api('PATCH', '/api/clinics/' + id, { code: value })); break;
         case 'clinic-name-change':
           await mutate(() => api('PATCH', '/api/clinics/' + id, { name: value })); break;
-        case 'toggle-threshold': {
-          const patch = {}; patch[id] = value;
-          await mutate(() => api('PATCH', '/api/settings', { thresholds: patch }));
-          break;
-        }
+        case 'set-new-threshold-amount': ui.newThreshold.amount = value; break;
+        case 'set-new-threshold-unit': ui.newThreshold.unit = value; break;
         case 'set-sheet-url':
           await mutate(() => api('PATCH', '/api/settings', { sheetUrl: value })); break;
       }
@@ -784,7 +760,7 @@
     try {
       const payload = {
         clinics: state.clinics, licenseTypes: state.licenseTypes, licenses: state.licenses, todos: state.todos,
-        ownerPhone: state.ownerPhone, thresholds: state.thresholds, managerPhones: state.managerPhones, settings: state.settings,
+        ownerPhone: state.ownerPhone, alertThresholds: state.alertThresholds, settings: state.settings,
       };
       const res = await fetch(state.sheetUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error('Request failed');

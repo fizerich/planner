@@ -19,16 +19,14 @@ function reminderText(license, clinicName, clinicCode, daysLeft, isOverdue) {
     ' — expiry date ' + fmtDate(license.expiry) + '. Please renew.';
 }
 
-const THRESHOLD_DAYS = { d30: 30, d14: 14, d1: 1 };
+function thresholdDays(t) { return t.unit === 'months' ? t.amount * 30 : t.amount; }
 
-/** One pass: finds licenses that just crossed an enabled threshold (or are overdue) and haven't
+/** One pass: finds licenses that just crossed a configured threshold (or are overdue) and haven't
  * already been alerted for that crossing, sends a push notification (and WhatsApp if configured),
  * and logs the activity. */
 async function runReminderCheck() {
   const state = db.getState();
-  const enabledThresholds = Object.entries(THRESHOLD_DAYS)
-    .filter(([key]) => state.thresholds[key])
-    .sort((a, b) => b[1] - a[1]); // largest window first
+  const sortedThresholds = [...state.alertThresholds].sort((a, b) => thresholdDays(b) - thresholdDays(a)); // largest window first
 
   const toLog = [];
   const sends = [];
@@ -36,7 +34,7 @@ async function runReminderCheck() {
   for (const license of state.licenses) {
     const clinic = state.clinics.find((c) => c.id === license.clinicId) || { code: '?', name: 'Unknown clinic' };
     const { daysLeft, key: statusKey } = computeStatus(license.expiry);
-    const phone = state.managerPhones[license.clinicId] || state.ownerPhone;
+    const phone = state.ownerPhone;
 
     if (statusKey === 'overdue') {
       const sentKey = `${license.id}:overdue:${todayKey()}`;
@@ -46,9 +44,9 @@ async function runReminderCheck() {
       continue;
     }
 
-    for (const [thresholdKey, thresholdDays] of enabledThresholds) {
-      if (daysLeft <= thresholdDays) {
-        const sentKey = `${license.id}:${thresholdKey}`;
+    for (const t of sortedThresholds) {
+      if (daysLeft <= thresholdDays(t)) {
+        const sentKey = `${license.id}:${t.id}`;
         if (!state.sentLog[sentKey]) {
           sends.push({ sentKey, phone, license, clinic, daysLeft, isOverdue: false });
         }

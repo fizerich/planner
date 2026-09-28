@@ -21,13 +21,32 @@ async function ensureDbFile() {
 
 // Fills in fields added by later versions of the app so an older on-disk db.json
 // (e.g. on a volume from a previous deploy) doesn't crash code that expects them.
+let idCounter = 0;
+function nextThresholdId() { idCounter += 1; return 'at' + Date.now() + idCounter; }
+
 function migrate(data) {
   if (!data || typeof data !== 'object') return null;
   if (!Array.isArray(data.pushSubscriptions)) data.pushSubscriptions = [];
-  if (!data.thresholds || typeof data.thresholds !== 'object') data.thresholds = {};
-  if (data.thresholds.d1 === undefined) {
-    data.thresholds.d1 = data.thresholds.d3 !== undefined ? data.thresholds.d3 : true;
+
+  // Replaced the fixed d30/d14/d3(d1) checkboxes with a free-form list of
+  // {amount, unit} thresholds the owner can add/remove. Carry old on/off
+  // checkbox state over as equivalent entries so nobody's settings vanish.
+  if (!Array.isArray(data.alertThresholds)) {
+    const old = data.thresholds || {};
+    const converted = [];
+    if (old.d30) converted.push({ id: nextThresholdId(), amount: 1, unit: 'months' });
+    if (old.d14) converted.push({ id: nextThresholdId(), amount: 14, unit: 'days' });
+    if (old.d3) converted.push({ id: nextThresholdId(), amount: 3, unit: 'days' });
+    if (old.d1) converted.push({ id: nextThresholdId(), amount: 1, unit: 'days' });
+    data.alertThresholds = converted.length ? converted : [
+      { id: nextThresholdId(), amount: 1, unit: 'months' },
+      { id: nextThresholdId(), amount: 14, unit: 'days' },
+      { id: nextThresholdId(), amount: 1, unit: 'days' },
+    ];
   }
+  delete data.thresholds;
+  delete data.managerPhones;
+
   // Carry existing installs onto the new dark theme's default accent, unless the
   // owner had already picked something other than the old light-theme default.
   if (data.settings && data.settings.accentColor === '#BE5B3D') {

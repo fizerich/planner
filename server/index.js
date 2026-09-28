@@ -4,7 +4,6 @@ const path = require('path');
 const db = require('./db');
 const scheduler = require('./scheduler');
 const { sendWhatsAppMessage, isConfigured } = require('./whatsapp');
-const { computeStatus } = require('./licenseStatus');
 const push = require('./push');
 
 const app = express();
@@ -27,11 +26,6 @@ function publicState(s) {
   };
 }
 
-function fmtDate(s) {
-  if (!s) return '';
-  return new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 // ---------- health check (for Railway/Render) ----------
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
@@ -42,7 +36,7 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.put('/api/state/bulk-import', async (req, res) => {
-  const ALLOWED_KEYS = ['clinics', 'licenseTypes', 'licenses', 'todos', 'ownerPhone', 'thresholds', 'managerPhones', 'settings', 'sheetUrl'];
+  const ALLOWED_KEYS = ['clinics', 'licenseTypes', 'licenses', 'todos', 'ownerPhone', 'alertThresholds', 'settings', 'sheetUrl'];
   const patch = req.body || {};
   const state = await db.update((s) => {
     for (const k of ALLOWED_KEYS) if (patch[k] !== undefined) s[k] = patch[k];
@@ -53,15 +47,33 @@ app.put('/api/state/bulk-import', async (req, res) => {
 
 // ---------- settings ----------
 app.patch('/api/settings', async (req, res) => {
-  const { ownerPhone, thresholds, managerPhones, accentColor, dashboardLayout, sheetUrl, lastSynced } = req.body || {};
+  const { ownerPhone, accentColor, dashboardLayout, sheetUrl, lastSynced } = req.body || {};
   const state = await db.update((s) => {
     if (ownerPhone !== undefined) s.ownerPhone = ownerPhone;
-    if (thresholds !== undefined) s.thresholds = { ...s.thresholds, ...thresholds };
-    if (managerPhones !== undefined) s.managerPhones = { ...s.managerPhones, ...managerPhones };
     if (accentColor !== undefined) s.settings.accentColor = accentColor;
     if (dashboardLayout !== undefined) s.settings.dashboardLayout = dashboardLayout;
     if (sheetUrl !== undefined) s.sheetUrl = sheetUrl;
     if (lastSynced !== undefined) s.lastSynced = lastSynced;
+  });
+  res.json(publicState(state));
+});
+
+// ---------- alert thresholds ----------
+app.post('/api/alert-thresholds', async (req, res) => {
+  const { amount, unit } = req.body || {};
+  const n = Number(amount);
+  if (!Number.isFinite(n) || n <= 0 || !['days', 'months'].includes(unit)) {
+    return res.status(400).json({ error: 'amount must be a positive number and unit must be "days" or "months"' });
+  }
+  const state = await db.update((s) => {
+    s.alertThresholds.push({ id: nextId('at', s), amount: n, unit });
+  });
+  res.json(publicState(state));
+});
+
+app.delete('/api/alert-thresholds/:id', async (req, res) => {
+  const state = await db.update((s) => {
+    s.alertThresholds = s.alertThresholds.filter((t) => t.id !== req.params.id);
   });
   res.json(publicState(state));
 });
@@ -73,7 +85,6 @@ app.post('/api/clinics', async (req, res) => {
   const state = await db.update((s) => {
     const id = nextId('clinic', s);
     s.clinics.push({ id, code: String(code).trim().toUpperCase(), name: String(name).trim() });
-    s.managerPhones[id] = '';
   });
   res.json(publicState(state));
 });
@@ -91,7 +102,6 @@ app.delete('/api/clinics/:id', async (req, res) => {
     s.clinics = s.clinics.filter((c) => c.id !== req.params.id);
     s.licenses = s.licenses.filter((l) => l.clinicId !== req.params.id);
     s.todos = s.todos.filter((t) => t.clinicId !== req.params.id);
-    delete s.managerPhones[req.params.id];
   });
   res.json(publicState(state));
 });
@@ -157,34 +167,6 @@ app.delete('/api/todos/:id', async (req, res) => {
 });
 
 // ---------- reminders ----------
-app.post('/api/reminders/send/:licenseId', async (req, res) => {
-  await db.load();
-  const s = db.getState();
-  const license = s.licenses.find((l) => l.id === req.params.licenseId);
-  if (!license) return res.status(404).json({ ok: false, error: 'License not found' });
-  const clinic = s.clinics.find((c) => c.id === license.clinicId) || { code: '?', name: 'Unknown clinic' };
-  const { daysLeft, key: statusKey } = computeStatus(license.expiry);
-  const phone = s.managerPhones[license.clinicId] || s.ownerPhone;
-  const text = 'Reminder: ' + license.type + ' at ' + clinic.name + ' (' + clinic.code + ') ' +
-    (statusKey === 'overdue' ? 'is OVERDUE by ' + Math.abs(daysLeft) + ' day(s)' : 'expires in ' + daysLeft + ' day(s)') +
-    ' — expiry date ' + fmtDate(license.expiry) + '. Please renew.';
-
-  const result = await sendWhatsAppMessage(phone, text);
-  const dayPhrase = statusKey === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : `${daysLeft} day(s) left`;
-
-  const state = await db.update((st) => {
-    if (result.ok) st.sentLog[`${license.id}:overdue:${new Date().toISOString().slice(0, 10)}`] = new Date().toISOString();
-    st.activityLog = [{
-      text: (result.ok ? 'Reminder sent — ' : 'Reminder FAILED — ') + clinic.name + ' ' + license.type + ' (' + dayPhrase + ')' + (result.ok ? '' : ': ' + result.error),
-      when: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
-      automated: false,
-      ok: result.ok,
-    }, ...st.activityLog].slice(0, 50);
-  });
-
-  res.json({ ok: result.ok, error: result.error, state: publicState(state) });
-});
-
 app.post('/api/reminders/test', async (req, res) => {
   await db.load();
   const s = db.getState();
