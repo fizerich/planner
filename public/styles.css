@@ -31,7 +31,7 @@ body {
 
 .chip { display: inline-flex; align-items: center; gap: 5px; font: 600 11px 'Work Sans', sans-serif; padding: 4px 9px; border-radius: 100px; letter-spacing: .2px; white-space: nowrap; }
 
-.field { border: 1px solid #E7DFD3; border-radius: 7px; padding: 8px 10px; font: 400 13px 'Work Sans', sans-serif; background: #FFFCF8; color: #2B2521; }
+.field { border: 1px solid #E7DFD3; border-radius: 7px; padding: 8px 10px; font: 400 13px 'Work Sans', sans-serif; background: #FFFCF8; color: #2B2521; min-width: 0; }
 .field:focus { outline: 2px solid #E3C4B2; }
 
 .scrollarea::-webkit-scrollbar { width: 8px; }
@@ -134,7 +134,8 @@ body {
 /* ---------- Settings ---------- */
 .settings-wrap { flex: 1; overflow-y: auto; padding: 24px 32px; display: flex; gap: 24px; flex-wrap: wrap; }
 .settings-col { flex: 1; max-width: 520px; min-width: 260px; }
-.clinic-row { display: flex; align-items: center; gap: 8px; background: #FFFCF8; border: 1px solid #E7DFD3; border-radius: 8px; padding: 10px 12px; }
+.clinic-row { display: flex; align-items: center; gap: 8px; background: #FFFCF8; border: 1px solid #E7DFD3; border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.clinic-row input.field { min-width: 0; }
 .type-chip { background: var(--accent-tint-bg); color: var(--accent-tint-text); padding: 7px 12px; font-size: 12px; gap: 8px; }
 .type-chip span { cursor: pointer; font-weight: 700; }
 .swatch-row { display: flex; gap: 10px; margin-bottom: 6px; }
@@ -145,4 +146,16 @@ body {
   .dash-list { flex-direction: column; }
   .reminders-wrap { flex-direction: column; }
   .settings-wrap { flex-direction: column; }
+  .settings-col { max-width: none; min-width: 0; width: 100%; }
+  .clinic-row input.field[style*="width:70px"] { width: 56px !important; }
+  .manager-row { min-width: 0; }
+
+  .dash-columns { scroll-snap-type: x mandatory; }
+  .dash-col { min-width: 86vw; scroll-snap-align: start; }
+
+  .calendar-cell { padding: 5px; min-height: 64px; gap: 2px; }
+  .calendar-daynum { font-size: 11px; }
+  .calendar-event-chip { font-size: 8px; padding: 1px 4px; }
+  .calendar-weekday { font-size: 9px; padding: 6px 0; }
+  .calendar-month-label { min-width: 0; font-size: 15px; }
 }
