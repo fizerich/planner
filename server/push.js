@@ -1,19 +1,29 @@
 const webpush = require('web-push');
 
-function isConfigured() {
-  return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+// Set once VAPID setup succeeds; false if keys are missing OR malformed. A bad
+// env var value must never crash the whole server — treat it the same as "not
+// configured" and let the UI surface a clear status instead.
+let vapidReady = false;
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  try {
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:owner@example.com',
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+    vapidReady = true;
+  } catch (err) {
+    console.error('[push] VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY are set but invalid — push notifications disabled. Error:', err.message);
+  }
 }
 
-if (isConfigured()) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:owner@example.com',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
+function isConfigured() {
+  return vapidReady;
 }
 
 function getPublicKey() {
-  return process.env.VAPID_PUBLIC_KEY || null;
+  return vapidReady ? process.env.VAPID_PUBLIC_KEY : null;
 }
 
 /** Sends one push message to one subscription. Returns { ok, expired } —
