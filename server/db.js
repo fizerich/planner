@@ -19,11 +19,21 @@ async function ensureDbFile() {
   }
 }
 
+// Fills in fields added by later versions of the app so an older on-disk db.json
+// (e.g. on a volume from a previous deploy) doesn't crash code that expects them.
+function migrate(data) {
+  if (!Array.isArray(data.pushSubscriptions)) data.pushSubscriptions = [];
+  if (data.thresholds && data.thresholds.d1 === undefined) {
+    data.thresholds.d1 = data.thresholds.d3 !== undefined ? data.thresholds.d3 : true;
+  }
+  return data;
+}
+
 async function load() {
   if (cache) return cache;
   await ensureDbFile();
   const raw = await fs.readFile(DB_PATH, 'utf-8');
-  cache = JSON.parse(raw);
+  cache = migrate(JSON.parse(raw));
   return cache;
 }
 

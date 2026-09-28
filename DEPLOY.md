@@ -40,8 +40,8 @@ git push -u origin main
    **Settings > Volumes > New Volume**. Set the mount path to `/data`.
 3. **Set environment variables** (Service > Variables):
    - `DATA_DIR` = `/data`
-   - `WHATSAPP_TOKEN` = *(your Meta token — see SETUP.md)*
-   - `WHATSAPP_PHONE_NUMBER_ID` = *(your Meta phone number ID)*
+   - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` = *(push notifications — recommended, see SETUP.md)*
+   - `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` = *(optional — your Meta token, see SETUP.md)*
    - `WHATSAPP_TEMPLATE_NAME` / `WHATSAPP_TEMPLATE_LANG` = *(optional, see SETUP.md)*
    - Railway sets `PORT` automatically — don't override it.
 4. Deploy. Railway gives you a public URL under **Settings > Networking >

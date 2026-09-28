@@ -1,0 +1,11 @@
+{
+  "name": "SuperPlanner — Dental Clinic Planner",
+  "short_name": "SuperPlanner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EFE9DF",
+  "theme_color": "#2B2521",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,7 +1,8 @@
 const cron = require('node-cron');
 const db = require('./db');
 const { computeStatus } = require('./licenseStatus');
-const { sendWhatsAppMessage } = require('./whatsapp');
+const { sendWhatsAppMessage, isConfigured: whatsappConfigured } = require('./whatsapp');
+const push = require('./push');
 
 function fmtDate(s) {
   if (!s) return '';
@@ -18,10 +19,11 @@ function reminderText(license, clinicName, clinicCode, daysLeft, isOverdue) {
     ' — expiry date ' + fmtDate(license.expiry) + '. Please renew.';
 }
 
-const THRESHOLD_DAYS = { d30: 30, d14: 14, d3: 3 };
+const THRESHOLD_DAYS = { d30: 30, d14: 14, d1: 1 };
 
 /** One pass: finds licenses that just crossed an enabled threshold (or are overdue) and haven't
- * already been alerted for that crossing, sends a WhatsApp message, and logs the activity. */
+ * already been alerted for that crossing, sends a push notification (and WhatsApp if configured),
+ * and logs the activity. */
 async function runReminderCheck() {
   const state = db.getState();
   const enabledThresholds = Object.entries(THRESHOLD_DAYS)
@@ -55,26 +57,61 @@ async function runReminderCheck() {
     }
   }
 
+  const pushConfigured = push.isConfigured() && state.pushSubscriptions.length > 0;
+
   for (const send of sends) {
     const text = reminderText(send.license, send.clinic.name, send.clinic.code, send.daysLeft, send.isOverdue);
-    const result = await sendWhatsAppMessage(send.phone, text);
     const dayPhrase = send.isOverdue ? `${Math.abs(send.daysLeft)} day(s) overdue` : `${send.daysLeft} day(s) left`;
+
+    let pushOk = false;
+    let deadEndpoints = [];
+    if (pushConfigured) {
+      const result = await push.broadcastPush(state.pushSubscriptions, {
+        title: send.isOverdue ? '⚠️ License overdue' : '⏰ License expiring soon',
+        body: send.clinic.name + ' — ' + send.license.type + ' (' + dayPhrase + ')',
+      });
+      deadEndpoints = result.deadEndpoints;
+      pushOk = deadEndpoints.length < state.pushSubscriptions.length; // at least one live subscription got it
+    }
+
+    // WhatsApp send is independent/optional; sendWhatsAppMessage itself no-ops gracefully if not configured.
+    const waResult = await sendWhatsAppMessage(send.phone, text);
+    const waOk = waResult.ok;
+    const waError = waResult.error;
+
+    const ok = pushOk || waOk;
+    const channels = [pushOk ? 'push' : null, waOk ? 'WhatsApp' : null].filter(Boolean);
+    let failureNote = '';
+    if (!ok) {
+      if (!push.isConfigured() && !whatsappConfigured()) failureNote = 'no notification channel set up yet — see Settings';
+      else if (push.isConfigured() && !pushConfigured) failureNote = 'no devices have enabled push notifications yet';
+      else failureNote = waError || 'send failed';
+    }
+
     toLog.push({
       sentKey: send.sentKey,
+      deadEndpoints,
       entry: {
-        text: (result.ok ? 'Reminder sent — ' : 'Reminder FAILED — ') + send.clinic.name + ' ' + send.license.type + ' (' + dayPhrase + ')' + (result.ok ? '' : ': ' + result.error),
+        text: (ok ? 'Reminder sent (' + channels.join(' + ') + ') — ' : 'Reminder FAILED — ') +
+          send.clinic.name + ' ' + send.license.type + ' (' + dayPhrase + ')' +
+          (!ok ? ': ' + failureNote : ''),
         when: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
         automated: true,
-        ok: result.ok,
+        ok,
       },
     });
   }
 
   if (toLog.length) {
     await db.update((s) => {
-      for (const { sentKey, entry } of toLog) {
+      const allDeadEndpoints = new Set();
+      for (const { sentKey, entry, deadEndpoints } of toLog) {
         if (entry.ok) s.sentLog[sentKey] = new Date().toISOString();
         s.activityLog = [entry, ...s.activityLog].slice(0, 50);
+        (deadEndpoints || []).forEach((e) => allDeadEndpoints.add(e));
+      }
+      if (allDeadEndpoints.size) {
+        s.pushSubscriptions = s.pushSubscriptions.filter((sub) => !allDeadEndpoints.has(sub.endpoint));
       }
     });
   }

@@ -1,7 +1,8 @@
 # SuperPlanner — Dental Clinic Planner
 
 Multi-clinic license/permit renewal tracker with a dashboard, calendar, to-do list,
-and automated WhatsApp reminders (owner + per-clinic managers).
+and automated reminders — via free browser push notifications (recommended) and/or
+WhatsApp (owner + per-clinic managers).
 
 ## Run it locally
 
@@ -18,12 +19,41 @@ For local development with auto-restart on file changes: `npm run dev`.
 
 **Going live?** See `DEPLOY.md` for Railway/Render hosting steps.
 
-## Configure WhatsApp reminders (Meta Cloud API)
+## Configure push notifications (recommended)
 
-The app ships wired up to send real WhatsApp messages via the Meta WhatsApp Cloud
-API, both for the "Send WhatsApp" button on the Reminders screen and for the
-automated daily check (08:00 server time) that alerts the owner or the relevant
-clinic manager as each license crosses its 30/14/3-day threshold or goes overdue.
+Free, official web standard, no ban risk. Once set up, the automated daily check
+(08:00 server time) sends a real notification straight to every device that has
+enabled it, as each license crosses its 1-month/2-week/1-day threshold or goes
+overdue — no phone number, business account, or per-message cost needed.
+
+1. Generate a VAPID key pair once:
+   ```
+   node -e "console.log(require('web-push').generateVAPIDKeys())"
+   ```
+2. Copy `.env.example` to `.env` and fill in:
+   ```
+   VAPID_PUBLIC_KEY=...
+   VAPID_PRIVATE_KEY=...
+   VAPID_SUBJECT=mailto:you@example.com
+   ```
+3. Restart the server, open the app, go to Settings (or Reminders) > Push
+   notifications > "Enable on this device" on every phone/computer that should
+   get alerts (owner's phone, each clinic manager's phone, etc.).
+4. **On iPhone**: Safari only delivers background push to installed PWAs — tap
+   Share > "Add to Home Screen" first, then open the app from that home screen
+   icon and enable notifications from there. Android/Chrome/desktop work
+   without any install step.
+
+Until VAPID keys are set, the UI shows a clear "not configured" status instead
+of failing silently.
+
+## Configure WhatsApp reminders (Meta Cloud API) — optional
+
+The app can also send real WhatsApp messages via the Meta WhatsApp Cloud API,
+both for the "Send WhatsApp" button on the Reminders screen and for the
+automated daily check. This is optional — push notifications above cover the
+same automated-alert need without WhatsApp's setup overhead or ToS risk (see
+the note below on unofficial WhatsApp libraries).
 
 Until you add credentials, sends will fail with a clear "not configured" message
 in the UI and server logs — nothing else in the app is affected.
@@ -61,6 +91,13 @@ If you leave `WHATSAPP_TEMPLATE_NAME` blank, the app sends plain text — fine f
 testing in the sandbox or once a recipient has messaged the business number
 within the last 24 hours, but automated reminders sent outside that window will
 be rejected by Meta until a template is configured.
+
+**A note on "unofficial" WhatsApp libraries** (e.g. Baileys, whatsapp-web.js):
+these automate a personal WhatsApp account instead of Meta's official Business
+API, which is against WhatsApp's Terms of Service. Numbers sending scheduled,
+bot-like messages are at real risk of being banned — including for normal
+day-to-day use on that same number. This app deliberately doesn't use them;
+push notifications above are the safe free alternative.
 
 ## Optional: back up / share data via Google Sheets
 

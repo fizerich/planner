@@ -177,7 +177,7 @@
   "thresholds": {
     "d30": true,
     "d14": true,
-    "d3": true
+    "d1": true
   },
   "managerPhones": {
     "kpa": "+60 13-222 1111",
@@ -188,51 +188,9 @@
     "accentColor": "#BE5B3D",
     "dashboardLayout": "columns"
   },
-  "activityLog": [
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Izznara Mergong Fire Safety Certificate (6 day(s) overdue): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Izznara Mergong Clinic Operating License (1 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi X-Ray / Radiation License (16 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi Dentist APC (Annual Practising Cert.) (11 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi Clinic Operating License (28 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Arau Dentist APC (Annual Practising Cert.) (14 day(s) overdue): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    },
-    {
-      "text": "Reminder FAILED — Klinik Pergigian Arau Clinic Operating License (6 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
-      "when": "28 Sept, 00:49",
-      "automated": true,
-      "ok": false
-    }
-  ],
+  "activityLog": [],
   "sentLog": {},
+  "pushSubscriptions": [],
   "sheetUrl": "",
   "lastSynced": ""
 }

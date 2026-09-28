@@ -5,6 +5,7 @@ const db = require('./db');
 const scheduler = require('./scheduler');
 const { sendWhatsAppMessage, isConfigured } = require('./whatsapp');
 const { computeStatus } = require('./licenseStatus');
+const push = require('./push');
 
 const app = express();
 app.use(express.json());
@@ -17,8 +18,13 @@ function nextId(prefix, state) {
 }
 
 function publicState(s) {
-  const { sentLog, _idCounter, ...rest } = s;
-  return { ...rest, whatsappConfigured: isConfigured() };
+  const { sentLog, _idCounter, pushSubscriptions, ...rest } = s;
+  return {
+    ...rest,
+    whatsappConfigured: isConfigured(),
+    pushConfigured: push.isConfigured(),
+    pushSubscriptionCount: (pushSubscriptions || []).length,
+  };
 }
 
 function fmtDate(s) {
@@ -197,6 +203,54 @@ app.post('/api/reminders/test', async (req, res) => {
   res.json({ ok: result.ok, error: result.error, state: publicState(state) });
 });
 
+// ---------- push notifications ----------
+app.get('/api/push/public-key', (req, res) => {
+  res.json({ publicKey: push.getPublicKey() });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+  const subscription = req.body || {};
+  if (!subscription.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
+  const state = await db.update((s) => {
+    s.pushSubscriptions = s.pushSubscriptions.filter((sub) => sub.endpoint !== subscription.endpoint);
+    s.pushSubscriptions.push(subscription);
+  });
+  res.json(publicState(state));
+});
+
+app.post('/api/push/unsubscribe', async (req, res) => {
+  const { endpoint } = req.body || {};
+  const state = await db.update((s) => {
+    s.pushSubscriptions = s.pushSubscriptions.filter((sub) => sub.endpoint !== endpoint);
+  });
+  res.json(publicState(state));
+});
+
+app.post('/api/push/test', async (req, res) => {
+  await db.load();
+  const s = db.getState();
+  if (!push.isConfigured()) return res.json({ ok: false, error: 'Push notifications not configured on the server (missing VAPID keys).' });
+  if (!s.pushSubscriptions.length) return res.json({ ok: false, error: 'No device has enabled notifications yet.' });
+
+  const { deadEndpoints } = await push.broadcastPush(s.pushSubscriptions, {
+    title: '✦ SuperPlanner',
+    body: 'Test notification — this is what a license/task alert will look like.',
+  });
+  const delivered = s.pushSubscriptions.length - deadEndpoints.length;
+
+  const state = await db.update((st) => {
+    if (deadEndpoints.length) st.pushSubscriptions = st.pushSubscriptions.filter((sub) => !deadEndpoints.includes(sub.endpoint));
+    st.activityLog = [{
+      text: delivered > 0 ? `Test push notification sent to ${delivered} device(s)` : 'Test push notification FAILED — no reachable devices',
+      when: 'Just now',
+      automated: false,
+      ok: delivered > 0,
+    }, ...st.activityLog].slice(0, 50);
+  });
+
+  res.json({ ok: delivered > 0, error: delivered > 0 ? null : 'Could not reach any subscribed device.', state: publicState(state) });
+});
+
 const PORT = process.env.PORT || 3000;
 
 db.load().then(() => {
@@ -205,6 +259,9 @@ db.load().then(() => {
     console.log(`Dental Planner server running on port ${PORT}`);
     if (!isConfigured()) {
       console.warn('WhatsApp Cloud API is not configured — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env to enable real sending. See SETUP.md.');
+    }
+    if (!push.isConfigured()) {
+      console.warn('Web push is not configured — set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in .env to enable push notifications. See SETUP.md.');
     }
   });
 });

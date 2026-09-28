@@ -7,7 +7,7 @@
     warning: { key: 'warning', label: 'Upcoming', fg: '#8A7412', bg: '#F2ECC9' },
     ok: { key: 'ok', label: 'Active', fg: '#3F6B4F', bg: '#DEEBE1' },
   };
-  const THRESHOLD_LABELS = { d30: '30 days before expiry', d14: '14 days before expiry', d3: '3 days before expiry' };
+  const THRESHOLD_LABELS = { d30: '1 month before expiry', d14: '2 weeks before expiry', d1: '1 day before expiry' };
   const ACCENT_OPTIONS = ['#BE5B3D', '#B2803D', '#7A8B5F', '#8B5E83'];
   const VIEWS = [
     ['dashboard', 'Dashboard'],
@@ -78,7 +78,11 @@
     toast: null,
     busySendId: null,
     busyTest: false,
+    busyPushTest: false,
     sheetBusy: false,
+    pushPermission: (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported',
+    pushSubscribed: false,
+    pushBusy: false,
   };
 
   function setNested(obj, path, value) {
@@ -462,20 +466,28 @@
     const dueReminders = enriched.filter((l) => l.statusKey === 'overdue' || l.statusKey === 'critical');
     const managerRows = s.clinics.map((c) => ({ code: c.code, id: c.id, phone: s.managerPhones[c.id] || '' }));
 
-    const waBanner = s.whatsappConfigured
-      ? ''
-      : `<div class="wa-status-banner warn">WhatsApp Cloud API isn't configured on the server yet — sends will fail until WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID are set. See SETUP.md.</div>`;
-
     return `
       <div class="view-header">
         <div>
           <div class="view-title">Reminders</div>
-          <div class="view-subtitle">Automated WhatsApp alerts for expiring licenses &amp; tasks</div>
+          <div class="view-subtitle">Automated push notifications &amp; WhatsApp alerts for expiring licenses &amp; tasks</div>
         </div>
       </div>
-      ${waBanner}
       <div class="reminders-wrap scrollarea">
         <div class="reminders-left">
+          <div class="card">
+            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Push notifications on this device</div>
+            <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin-bottom:10px">
+              ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet — see Settings.'}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${!pushSupported() ? '<span style="font:400 12px \'Work Sans\';color:#B0A79B">Not supported in this browser.</span>' : ui.pushSubscribed
+                ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
+                : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
+              <button class="pill-btn pill-outline" data-action="send-push-test" ${ui.busyPushTest ? 'disabled' : ''}>${ui.busyPushTest ? 'Sending…' : 'Send test push'}</button>
+            </div>
+          </div>
+
           <div class="card">
             <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Needs a reminder now</div>
             <div style="display:flex;flex-direction:column;gap:8px">
@@ -516,7 +528,7 @@
             </div>
           </div>
 
-          <button class="pill-btn pill-accent" style="padding:11px 18px;align-self:flex-start" data-action="send-test" ${ui.busyTest ? 'disabled' : ''}>${ui.busyTest ? 'Sending…' : 'Send test reminder'}</button>
+          <button class="pill-btn pill-accent" style="padding:11px 18px;align-self:flex-start" data-action="send-test" ${ui.busyTest ? 'disabled' : ''}>${ui.busyTest ? 'Sending…' : 'Send test WhatsApp reminder'}</button>
           ${ui.toast ? `<div class="${ui.toast.type === 'error' ? 'toast-error' : 'toast-success'}">${esc(ui.toast.text)}</div>` : ''}
         </div>
 
@@ -589,9 +601,20 @@
             ${ui.toast ? `<div style="font:500 12px 'Work Sans';color:var(--accent-tint-text);background:var(--accent-tint-bg);border-radius:6px;padding:8px 10px">${esc(ui.toast.text)}</div>` : ''}
           </div>
 
+          <div style="font:600 14px 'Work Sans';color:#2B2521;margin:20px 0 6px">Push notifications</div>
+          <div style="font:400 12px 'Work Sans';color:#8A8076;margin-bottom:10px;line-height:1.5">Free, no WhatsApp ban risk — alerts appear directly on this device's lock screen. On iPhone, "Add to Home Screen" first so notifications keep working in the background.</div>
+          <div class="card" style="display:flex;flex-direction:column;gap:10px">
+            <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin:0">
+              ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (see SETUP.md).'}
+            </div>
+            ${!pushSupported() ? '<div style="font:400 12px \'Work Sans\';color:#B0A79B">Notifications aren\'t supported in this browser.</div>' : ui.pushSubscribed
+              ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
+              : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
+          </div>
+
           <div style="font:600 14px 'Work Sans';color:#2B2521;margin:20px 0 6px">WhatsApp Cloud API</div>
           <div class="wa-status-banner ${s.whatsappConfigured ? 'ok' : 'warn'}" style="margin:0">
-            ${s.whatsappConfigured ? 'Configured — automated & manual reminders send for real.' : 'Not configured yet. Set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in the server .env (see SETUP.md).'}
+            ${s.whatsappConfigured ? 'Configured — automated & manual reminders send for real.' : 'Not configured yet (optional — see SETUP.md for setup, and the ban-risk notes if considering unofficial libraries instead).'}
           </div>
         </div>
       </div>`;
@@ -686,6 +709,17 @@
             showToast(result.ok ? 'success' : 'error', result.ok ? 'Test reminder sent to owner.' : ('Send failed: ' + result.error));
           } finally { ui.busyTest = false; render(); }
           break;
+        case 'enable-push':
+          await enablePush(); break;
+        case 'disable-push':
+          await disablePush(); break;
+        case 'send-push-test':
+          ui.busyPushTest = true; render();
+          try {
+            const result = await mutate(() => api('POST', '/api/push/test'));
+            showToast(result.ok ? 'success' : 'error', result.ok ? 'Test push notification sent.' : ('Send failed: ' + result.error));
+          } finally { ui.busyPushTest = false; render(); }
+          break;
         case 'save-to-sheet':
           ui.sheetBusy = true; render();
           try { await saveToSheet(); } finally { ui.sheetBusy = false; render(); }
@@ -775,6 +809,76 @@
     }
   }
 
+  // ---------- push notifications ----------
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined';
+  }
+
+  async function checkExistingPushSubscription() {
+    if (!pushSupported()) return;
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      const sub = await reg.pushManager.getSubscription();
+      ui.pushSubscribed = !!sub;
+    } catch (e) { /* ignore — treated as not subscribed */ }
+  }
+
+  async function enablePush() {
+    if (!pushSupported()) { showToast('error', 'Notifications are not supported in this browser.'); return; }
+    ui.pushBusy = true; render();
+    try {
+      const permission = await Notification.requestPermission();
+      ui.pushPermission = permission;
+      if (permission !== 'granted') { showToast('error', 'Notification permission was not granted.'); return; }
+
+      const { publicKey } = await api('GET', '/api/push/public-key');
+      if (!publicKey) { showToast('error', 'Push notifications are not set up on the server yet (missing VAPID keys).'); return; }
+
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+      }
+      await mutate(() => api('POST', '/api/push/subscribe', sub.toJSON ? sub.toJSON() : sub));
+      ui.pushSubscribed = true;
+      showToast('success', 'Notifications enabled on this device.');
+    } catch (err) {
+      showToast('error', 'Could not enable notifications: ' + err.message);
+    } finally {
+      ui.pushBusy = false; render();
+    }
+  }
+
+  async function disablePush() {
+    ui.pushBusy = true; render();
+    try {
+      if (pushSupported()) {
+        const reg = await navigator.serviceWorker.getRegistration('./sw.js');
+        const sub = reg && (await reg.pushManager.getSubscription());
+        if (sub) {
+          await mutate(() => api('POST', '/api/push/unsubscribe', { endpoint: sub.endpoint }));
+          await sub.unsubscribe();
+        }
+      }
+      ui.pushSubscribed = false;
+      showToast('success', 'Notifications disabled on this device.');
+    } catch (err) {
+      showToast('error', 'Could not disable notifications: ' + err.message);
+    } finally {
+      ui.pushBusy = false; render();
+    }
+  }
+
   // ---------- boot ----------
   async function init() {
     await refresh();
@@ -782,6 +886,8 @@
     if (!ui.newLicense.typeId && state.licenseTypes[0]) ui.newLicense.typeId = state.licenseTypes[0].id;
     if (!ui.newTodo.clinicId && state.clinics[0]) ui.newTodo.clinicId = state.clinics[0].id;
     bindDelegatedEvents();
+    render();
+    await checkExistingPushSubscription();
     render();
   }
 
