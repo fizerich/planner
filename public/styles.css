@@ -150,8 +150,8 @@ body {
   .clinic-row input.field[style*="width:70px"] { width: 56px !important; }
   .manager-row { min-width: 0; }
 
-  .dash-columns { scroll-snap-type: x mandatory; }
-  .dash-col { min-width: 86vw; scroll-snap-align: start; }
+  .dash-columns { padding-left: 16px; padding-right: 16px; scroll-snap-type: x mandatory; scroll-padding: 0 16px; }
+  .dash-col { flex: 0 0 auto; width: 82vw; min-width: 0; scroll-snap-align: center; }
 
   .calendar-cell { padding: 5px; min-height: 64px; gap: 2px; }
   .calendar-daynum { font-size: 11px; }
