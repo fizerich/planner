@@ -1,0 +1,238 @@
+{
+  "clinics": [
+    {
+      "id": "kpa",
+      "code": "Personal",
+      "name": "Klinik Pergigian Arau"
+    },
+    {
+      "id": "izr",
+      "code": "IZR",
+      "name": "Klinik Pergigian Izznara Jejawi"
+    },
+    {
+      "id": "izz",
+      "code": "IZZ",
+      "name": "Klinik Pergigian Izznara Mergong"
+    }
+  ],
+  "licenseTypes": [
+    {
+      "id": "lt1",
+      "name": "Clinic Operating License"
+    },
+    {
+      "id": "lt2",
+      "name": "Dentist APC (Annual Practising Cert.)"
+    },
+    {
+      "id": "lt3",
+      "name": "X-Ray / Radiation License"
+    },
+    {
+      "id": "lt4",
+      "name": "Fire Safety Certificate"
+    },
+    {
+      "id": "lt5",
+      "name": "Staff Work Permit"
+    }
+  ],
+  "licenses": [
+    {
+      "id": "l1",
+      "clinicId": "kpa",
+      "typeId": "lt1",
+      "type": "Clinic Operating License",
+      "expiry": "2026-10-04",
+      "notes": ""
+    },
+    {
+      "id": "l2",
+      "clinicId": "kpa",
+      "typeId": "lt2",
+      "type": "Dentist APC (Annual Practising Cert.)",
+      "expiry": "2026-09-14",
+      "notes": ""
+    },
+    {
+      "id": "l3",
+      "clinicId": "kpa",
+      "typeId": "lt3",
+      "type": "X-Ray / Radiation License",
+      "expiry": "2026-12-10",
+      "notes": ""
+    },
+    {
+      "id": "l4",
+      "clinicId": "kpa",
+      "typeId": "lt4",
+      "type": "Fire Safety Certificate",
+      "expiry": "2027-04-06",
+      "notes": ""
+    },
+    {
+      "id": "l5",
+      "clinicId": "izr",
+      "typeId": "lt1",
+      "type": "Clinic Operating License",
+      "expiry": "2026-10-26",
+      "notes": ""
+    },
+    {
+      "id": "l6",
+      "clinicId": "izr",
+      "typeId": "lt2",
+      "type": "Dentist APC (Annual Practising Cert.)",
+      "expiry": "2026-10-09",
+      "notes": ""
+    },
+    {
+      "id": "l7",
+      "clinicId": "izr",
+      "typeId": "lt5",
+      "type": "Staff Work Permit",
+      "expiry": "2027-02-25",
+      "notes": ""
+    },
+    {
+      "id": "l8",
+      "clinicId": "izr",
+      "typeId": "lt3",
+      "type": "X-Ray / Radiation License",
+      "expiry": "2026-10-14",
+      "notes": ""
+    },
+    {
+      "id": "l9",
+      "clinicId": "izz",
+      "typeId": "lt1",
+      "type": "Clinic Operating License",
+      "expiry": "2026-09-29",
+      "notes": ""
+    },
+    {
+      "id": "l10",
+      "clinicId": "izz",
+      "typeId": "lt4",
+      "type": "Fire Safety Certificate",
+      "expiry": "2026-09-22",
+      "notes": ""
+    },
+    {
+      "id": "l11",
+      "clinicId": "izz",
+      "typeId": "lt2",
+      "type": "Dentist APC (Annual Practising Cert.)",
+      "expiry": "2027-05-26",
+      "notes": ""
+    },
+    {
+      "id": "l12",
+      "clinicId": "izz",
+      "typeId": "lt5",
+      "type": "Staff Work Permit",
+      "expiry": "2026-11-04",
+      "notes": ""
+    }
+  ],
+  "todos": [
+    {
+      "id": "t1",
+      "clinicId": "kpa",
+      "text": "Book radiation safety officer inspection",
+      "done": false,
+      "dueDate": "2026-10-02"
+    },
+    {
+      "id": "t2",
+      "clinicId": "izr",
+      "text": "Prepare APC renewal documents for Dr. Anis",
+      "done": false,
+      "dueDate": "2026-10-06"
+    },
+    {
+      "id": "t3",
+      "clinicId": "izz",
+      "text": "Confirm owner WhatsApp number for reminders",
+      "done": true,
+      "dueDate": ""
+    },
+    {
+      "id": "t4",
+      "clinicId": "izz",
+      "text": "Renew fire extinguisher inspection",
+      "done": false,
+      "dueDate": "2026-10-12"
+    },
+    {
+      "id": "t5",
+      "clinicId": "kpa",
+      "text": "Submit staff work permit renewal forms",
+      "done": false,
+      "dueDate": ""
+    }
+  ],
+  "ownerPhone": "+60 12-345 6789",
+  "thresholds": {
+    "d30": true,
+    "d14": true,
+    "d3": true
+  },
+  "managerPhones": {
+    "kpa": "+60 13-222 1111",
+    "izr": "",
+    "izz": "+60 17-888 2222"
+  },
+  "settings": {
+    "accentColor": "#BE5B3D",
+    "dashboardLayout": "columns"
+  },
+  "activityLog": [
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Izznara Mergong Fire Safety Certificate (6 day(s) overdue): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Izznara Mergong Clinic Operating License (1 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi X-Ray / Radiation License (16 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi Dentist APC (Annual Practising Cert.) (11 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Izznara Jejawi Clinic Operating License (28 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Arau Dentist APC (Annual Practising Cert.) (14 day(s) overdue): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    },
+    {
+      "text": "Reminder FAILED — Klinik Pergigian Arau Clinic Operating License (6 day(s) left): WhatsApp Cloud API not configured yet — set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in .env.",
+      "when": "28 Sept, 00:49",
+      "automated": true,
+      "ok": false
+    }
+  ],
+  "sentLog": {},
+  "sheetUrl": "",
+  "lastSynced": ""
+}

@@ -1,0 +1,44 @@
+SETUP: Connect the planner to a Google Sheet
+=============================================
+
+1. Create (or open) a Google Sheet you want to use as the shared database.
+2. In the Sheet, go to Extensions > Apps Script.
+3. Delete any starter code and paste in the script below.
+4. Click Deploy > New deployment > select type "Web app".
+   - Execute as: Me
+   - Who has access: Anyone
+5. Click Deploy, authorize the permissions Google asks for, then copy the
+   "Web app URL" it gives you (ends in /exec).
+6. In the planner app, go to Settings > Data & sync, paste that URL, then
+   click "Save to Sheet" once to create the first snapshot. Anyone you give
+   the same URL to can click "Load from Sheet" to pull the latest data, and
+   "Save to Sheet" to push their changes back.
+
+Note: this is a simple whole-snapshot sync (not real-time multi-user editing) —
+whoever saves last wins. Good for one owner + a few managers checking in
+periodically; ask if you want live multi-user sync instead.
+
+--- Paste everything below into Code.gs ---
+
+function doGet(e) {
+  var sheet = getDataSheet_();
+  var json = sheet.getRange('A1').getValue() || '{}';
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var sheet = getDataSheet_();
+  sheet.getRange('A1').setValue(e.postData.contents);
+  return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getDataSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Data');
+  if (!sheet) {
+    sheet = ss.insertSheet('Data');
+    sheet.getRange('A1').setValue('{}');
+  }
+  return sheet;
+}
