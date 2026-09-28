@@ -28,6 +28,11 @@ function migrate(data) {
   if (data.thresholds.d1 === undefined) {
     data.thresholds.d1 = data.thresholds.d3 !== undefined ? data.thresholds.d3 : true;
   }
+  // Carry existing installs onto the new dark theme's default accent, unless the
+  // owner had already picked something other than the old light-theme default.
+  if (data.settings && data.settings.accentColor === '#BE5B3D') {
+    data.settings.accentColor = '#7C6FEA';
+  }
   return data;
 }
 

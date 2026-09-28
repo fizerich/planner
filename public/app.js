@@ -2,13 +2,13 @@
   'use strict';
 
   const STATUS = {
-    overdue: { key: 'overdue', label: 'Overdue', fg: '#B23B2E', bg: '#F7E2DE' },
-    critical: { key: 'critical', label: 'Due soon', fg: '#9C5A17', bg: '#F6E4CB' },
-    warning: { key: 'warning', label: 'Upcoming', fg: '#8A7412', bg: '#F2ECC9' },
-    ok: { key: 'ok', label: 'Active', fg: '#3F6B4F', bg: '#DEEBE1' },
+    overdue: { key: 'overdue', label: 'Overdue', fg: '#FF7A90', bg: '#3B1620' },
+    critical: { key: 'critical', label: 'Due soon', fg: '#FFB454', bg: '#3D2A12' },
+    warning: { key: 'warning', label: 'Upcoming', fg: '#F0DB5E', bg: '#322C10' },
+    ok: { key: 'ok', label: 'Active', fg: '#52E0A8', bg: '#10301F' },
   };
   const THRESHOLD_LABELS = { d30: '1 month before expiry', d14: '2 weeks before expiry', d1: '1 day before expiry' };
-  const ACCENT_OPTIONS = ['#BE5B3D', '#B2803D', '#7A8B5F', '#8B5E83'];
+  const ACCENT_OPTIONS = ['#7C6FEA', '#4FD1C5', '#F07EA6', '#F5A85A'];
   const VIEWS = [
     ['dashboard', 'Dashboard'],
     ['calendar', 'Calendar'],
@@ -161,7 +161,7 @@
     const prevMonthDays = new Date(year, month, 0).getDate();
     const cells = [];
     for (let i = startWeekday - 1; i >= 0; i--) {
-      cells.push({ dayNum: prevMonthDays - i, bg: '#F3EFE7', dayColor: '#C7BFAF', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: prevMonthDays - i, bg: '#150F2C', dayColor: '#4A4468', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d);
@@ -176,13 +176,13 @@
       });
       state.todos.forEach((t) => {
         if (t.dueDate && (filterClinic === 'all' || t.clinicId === filterClinic) && t.dueDate === dateStr) {
-          events.push({ label: t.text, style: 'color:#6B625A;background:#EFE9DF' });
+          events.push({ label: t.text, style: 'color:#B8B3D6;background:#221D3F' });
         }
       });
       cells.push({
         dayNum: d,
-        bg: isToday ? '#F1DDD1' : '#FFFCF8',
-        dayColor: isToday ? '#9C5A17' : '#2B2521',
+        bg: isToday ? '#2A2050' : '#1F1A3A',
+        dayColor: isToday ? '#B9A8FF' : '#F1EEFB',
         dayWeight: isToday ? 700 : 500,
         events: events.slice(0, 2),
         hasMore: events.length > 2,
@@ -191,7 +191,7 @@
     }
     let next = 1;
     while (cells.length < 42) {
-      cells.push({ dayNum: next, bg: '#F3EFE7', dayColor: '#C7BFAF', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: next, bg: '#150F2C', dayColor: '#4A4468', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
       next++;
     }
     return { cells, monthLabel: base.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) };
@@ -254,7 +254,7 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="chip" style="${chipStyle(STATUS.overdue)}">${overdueCount} overdue</span>
           <span class="chip" style="${chipStyle(STATUS.critical)}">${criticalCount} due soon</span>
-          <span class="chip" style="color:#6B625A;background:#EFE9DF">${openTodoCount} open to-dos</span>
+          <span class="chip" style="color:var(--text-secondary);background:var(--surface-alt)">${openTodoCount} open to-dos</span>
           <div class="layout-toggle">
             ${pillBtn({ label: 'Columns', active: layout === 'columns', action: 'set-layout', id: 'columns' })}
             ${pillBtn({ label: 'List', active: layout === 'list', action: 'set-layout', id: 'list' })}
@@ -308,7 +308,7 @@
           <div class="row-sub">${esc(l.clinicCode)} &middot; ${esc(l.clinicName)} &middot; expires ${l.expiryLabel}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <span style="font:500 12px 'Work Sans';color:#8A8076">${l.daysLabel}</span>
+          <span style="font:500 12px 'Work Sans';color:var(--text-secondary)">${l.daysLabel}</span>
           <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
         </div>
       </div>`).join('');
@@ -414,7 +414,7 @@
               <div class="row-sub">${esc(l.clinicCode)} &middot; ${esc(l.clinicName)} &middot; expires ${l.expiryLabel}${l.notes ? ' &middot; ' + esc(l.notes) : ''}</div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
-              <span style="font:500 12px 'Work Sans';color:#8A8076">${l.daysLabel}</span>
+              <span style="font:500 12px 'Work Sans';color:var(--text-secondary)">${l.daysLabel}</span>
               <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
               <button class="pill-btn pill-danger" data-action="remove-license" data-id="${l.id}">Remove</button>
             </div>
@@ -476,12 +476,12 @@
       <div class="reminders-wrap scrollarea">
         <div class="reminders-left">
           <div class="card">
-            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Push notifications on this device</div>
+            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Push notifications on this device</div>
             <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin-bottom:10px">
               ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet — see Settings.'}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${!pushSupported() ? '<span style="font:400 12px \'Work Sans\';color:#B0A79B">Not supported in this browser.</span>' : ui.pushSubscribed
+              ${!pushSupported() ? '<span style="font:400 12px \'Work Sans\';color:var(--text-tertiary)">Not supported in this browser.</span>' : ui.pushSubscribed
                 ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
                 : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
               <button class="pill-btn pill-outline" data-action="send-push-test" ${ui.busyPushTest ? 'disabled' : ''}>${ui.busyPushTest ? 'Sending…' : 'Send test push'}</button>
@@ -489,13 +489,13 @@
           </div>
 
           <div class="card">
-            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Needs a reminder now</div>
+            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Needs a reminder now</div>
             <div style="display:flex;flex-direction:column;gap:8px">
               ${dueReminders.map((l) => `
                 <div class="reminder-row">
                   <div style="min-width:0">
-                    <div style="font:500 12.5px 'Work Sans';color:#2B2521">${esc(l.type)}</div>
-                    <div style="font:400 11.5px 'Work Sans';color:#8A8076;margin-top:2px">${esc(l.clinicCode)} &middot; ${l.daysLabel}</div>
+                    <div style="font:500 12.5px 'Work Sans';color:var(--text-primary)">${esc(l.type)}</div>
+                    <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:2px">${esc(l.clinicCode)} &middot; ${l.daysLabel}</div>
                   </div>
                   <button class="pill-btn pill-wa" data-action="send-reminder" data-id="${l.id}" ${ui.busySendId === l.id ? 'disabled' : ''}>${ui.busySendId === l.id ? 'Sending…' : 'Send WhatsApp'}</button>
                 </div>`).join('') || '<div class="empty-note">Nothing due right now — all caught up.</div>'}
@@ -503,22 +503,22 @@
           </div>
 
           <div class="card">
-            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Owner WhatsApp number</div>
+            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Owner WhatsApp number</div>
             <input class="field" type="text" value="${esc(s.ownerPhone)}" style="width:100%" data-action="set-owner-phone" />
-            <div style="font:400 11.5px 'Work Sans';color:#8A8076;margin-top:8px">All expiry &amp; overdue alerts are sent here by default.</div>
+            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:8px">All expiry &amp; overdue alerts are sent here by default.</div>
           </div>
 
           <div class="card">
-            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Alert schedule</div>
+            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Alert schedule</div>
             ${Object.keys(THRESHOLD_LABELS).map((key) => `
               <label style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer">
                 <input type="checkbox" ${s.thresholds[key] ? 'checked' : ''} data-action="toggle-threshold" data-id="${key}" style="width:16px;height:16px" />
-                <span style="font:400 13px 'Work Sans';color:#2B2521">${THRESHOLD_LABELS[key]}</span>
+                <span style="font:400 13px 'Work Sans';color:var(--text-primary)">${THRESHOLD_LABELS[key]}</span>
               </label>`).join('')}
           </div>
 
           <div class="card">
-            <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Per-clinic manager numbers</div>
+            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Per-clinic manager numbers</div>
             <div style="display:flex;flex-direction:column;gap:10px">
               ${managerRows.map((m) => `
                 <div class="manager-row">
@@ -537,8 +537,8 @@
           <div style="display:flex;flex-direction:column;gap:8px">
             ${s.activityLog.map((a) => `
               <div class="activity-item">
-                <div style="font:500 12.5px 'Work Sans';color:#2B2521">${esc(a.text)}</div>
-                <div style="font:400 11.5px 'Work Sans';color:#8A8076;margin-top:3px">${esc(a.when)}${a.automated ? ' &middot; automatic' : ''}</div>
+                <div style="font:500 12.5px 'Work Sans';color:var(--text-primary)">${esc(a.text)}</div>
+                <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:3px">${esc(a.when)}${a.automated ? ' &middot; automatic' : ''}</div>
               </div>`).join('') || '<div class="empty-note">No activity yet.</div>'}
           </div>
         </div>
@@ -556,7 +556,7 @@
       </div>
       <div class="settings-wrap scrollarea">
         <div class="settings-col">
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">Clinics</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Clinics</div>
           <div style="display:flex;flex-direction:column;gap:10px">
             ${s.clinics.map((cl) => `
               <div class="clinic-row">
@@ -571,14 +571,14 @@
             <button class="pill-btn pill-accent" data-action="add-clinic">+ Add clinic</button>
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin:24px 0 12px">Theme</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:24px 0 12px">Theme</div>
           <div class="swatch-row">
             ${ACCENT_OPTIONS.map((color) => `<div class="swatch ${s.settings.accentColor === color ? 'selected' : ''}" style="background:${color}" data-action="set-accent" data-id="${color}"></div>`).join('')}
           </div>
         </div>
 
         <div class="settings-col" style="max-width:420px">
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:12px">License &amp; permit types</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">License &amp; permit types</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             ${s.licenseTypes.map((lt) => `<span class="chip type-chip">${esc(lt.name)}<span data-action="remove-license-type" data-id="${lt.id}">&times;</span></span>`).join('')}
           </div>
@@ -589,30 +589,30 @@
         </div>
 
         <div class="settings-col" style="max-width:420px">
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin-bottom:6px">Data &amp; sync</div>
-          <div style="font:400 12px 'Work Sans';color:#8A8076;margin-bottom:12px;line-height:1.5">This server is the shared source of truth for the owner and all clinic managers. Optionally connect a Google Sheet as an external backup/export via a small Apps Script bridge (paste the deployed Web App URL below).</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:6px">Data &amp; sync</div>
+          <div style="font:400 12px 'Work Sans';color:var(--text-secondary);margin-bottom:12px;line-height:1.5">This server is the shared source of truth for the owner and all clinic managers. Optionally connect a Google Sheet as an external backup/export via a small Apps Script bridge (paste the deployed Web App URL below).</div>
           <div class="card" style="display:flex;flex-direction:column;gap:10px">
             <input class="field" type="text" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(s.sheetUrl)}" style="width:100%" data-action="set-sheet-url" />
             <div style="display:flex;gap:8px">
               <button class="pill-btn pill-accent" style="flex:1" data-action="save-to-sheet" ${ui.sheetBusy ? 'disabled' : ''}>Save to Sheet</button>
               <button class="pill-btn pill-outline" style="flex:1" data-action="load-from-sheet" ${ui.sheetBusy ? 'disabled' : ''}>Load from Sheet</button>
             </div>
-            <div style="font:400 11.5px 'Work Sans';color:#8A8076">${s.lastSynced ? 'Last synced ' + esc(s.lastSynced) : 'Not synced yet'}</div>
+            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary)">${s.lastSynced ? 'Last synced ' + esc(s.lastSynced) : 'Not synced yet'}</div>
             ${ui.toast ? `<div style="font:500 12px 'Work Sans';color:var(--accent-tint-text);background:var(--accent-tint-bg);border-radius:6px;padding:8px 10px">${esc(ui.toast.text)}</div>` : ''}
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin:20px 0 6px">Push notifications</div>
-          <div style="font:400 12px 'Work Sans';color:#8A8076;margin-bottom:10px;line-height:1.5">Free, no WhatsApp ban risk — alerts appear directly on this device's lock screen. On iPhone, "Add to Home Screen" first so notifications keep working in the background.</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:20px 0 6px">Push notifications</div>
+          <div style="font:400 12px 'Work Sans';color:var(--text-secondary);margin-bottom:10px;line-height:1.5">Free, no WhatsApp ban risk — alerts appear directly on this device's lock screen. On iPhone, "Add to Home Screen" first so notifications keep working in the background.</div>
           <div class="card" style="display:flex;flex-direction:column;gap:10px">
             <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin:0">
               ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (see SETUP.md).'}
             </div>
-            ${!pushSupported() ? '<div style="font:400 12px \'Work Sans\';color:#B0A79B">Notifications aren\'t supported in this browser.</div>' : ui.pushSubscribed
+            ${!pushSupported() ? '<div style="font:400 12px \'Work Sans\';color:var(--text-tertiary)">Notifications aren\'t supported in this browser.</div>' : ui.pushSubscribed
               ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
               : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:#2B2521;margin:20px 0 6px">WhatsApp Cloud API</div>
+          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:20px 0 6px">WhatsApp Cloud API</div>
           <div class="wa-status-banner ${s.whatsappConfigured ? 'ok' : 'warn'}" style="margin:0">
             ${s.whatsappConfigured ? 'Configured — automated & manual reminders send for real.' : 'Not configured yet (optional — see SETUP.md for setup, and the ban-risk notes if considering unofficial libraries instead).'}
           </div>
