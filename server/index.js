@@ -264,4 +264,7 @@ db.load().then(() => {
       console.warn('Web push is not configured — set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in .env to enable push notifications. See SETUP.md.');
     }
   });
+}).catch((err) => {
+  console.error('[startup] Failed to load the database — server cannot start:', err);
+  process.exit(1);
 });
