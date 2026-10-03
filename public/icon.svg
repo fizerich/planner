@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="18" fill="#0B0C10"/>
-  <path d="M50 20 L58 42 L80 50 L58 58 L50 80 L42 58 L20 50 L42 42 Z" fill="#5E6AD2"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7B85E8"/>
+      <stop offset="1" stop-color="#4A54B8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30" cy="22" r="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <rect width="100" height="100" rx="22" fill="url(#glow)"/>
+
+  <rect x="34" y="24" width="40" height="32" rx="7" fill="#fff" opacity=".3" transform="rotate(10 54 40)"/>
+  <rect x="28" y="30" width="42" height="34" rx="7" fill="#fff" opacity=".55" transform="rotate(-5 49 47)"/>
+  <rect x="24" y="38" width="44" height="36" rx="7" fill="#fff"/>
+  <path d="M34 56 L45 67 L68 44" fill="none" stroke="#4A54B8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
