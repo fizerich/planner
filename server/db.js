@@ -47,10 +47,13 @@ function migrate(data) {
   delete data.thresholds;
   delete data.managerPhones;
 
-  // Carry existing installs onto the new dark theme's default accent, unless the
-  // owner had already picked something other than the old light-theme default.
+  // Carry existing installs onto each theme revision's new default accent, unless
+  // the owner had already picked something other than the previous default.
   if (data.settings && data.settings.accentColor === '#BE5B3D') {
     data.settings.accentColor = '#7C6FEA';
+  }
+  if (data.settings && data.settings.accentColor === '#7C6FEA') {
+    data.settings.accentColor = '#5E6AD2';
   }
   return data;
 }

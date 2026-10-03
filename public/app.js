@@ -2,12 +2,12 @@
   'use strict';
 
   const STATUS = {
-    overdue: { key: 'overdue', label: 'Overdue', fg: '#FF7A90', bg: '#3B1620' },
-    critical: { key: 'critical', label: 'Due soon', fg: '#FFB454', bg: '#3D2A12' },
-    warning: { key: 'warning', label: 'Upcoming', fg: '#F0DB5E', bg: '#322C10' },
-    ok: { key: 'ok', label: 'Active', fg: '#52E0A8', bg: '#10301F' },
+    overdue: { key: 'overdue', label: 'Overdue', fg: '#E5697A', bg: '#2B1619' },
+    critical: { key: 'critical', label: 'Due soon', fg: '#D9A454', bg: '#2B2113' },
+    warning: { key: 'warning', label: 'Upcoming', fg: '#C9B968', bg: '#262310' },
+    ok: { key: 'ok', label: 'Active', fg: '#4CB782', bg: '#132A1F' },
   };
-  const ACCENT_OPTIONS = ['#7C6FEA', '#4FD1C5', '#F07EA6', '#F5A85A'];
+  const ACCENT_OPTIONS = ['#5E6AD2', '#4A9B9B', '#BD7295', '#C08B4A'];
   const VIEWS = [
     ['dashboard', 'Dashboard'],
     ['calendar', 'Calendar'],
@@ -161,7 +161,7 @@
     const prevMonthDays = new Date(year, month, 0).getDate();
     const cells = [];
     for (let i = startWeekday - 1; i >= 0; i--) {
-      cells.push({ dayNum: prevMonthDays - i, bg: '#150F2C', dayColor: '#4A4468', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: prevMonthDays - i, bg: '#0F1013', dayColor: '#44464F', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d);
@@ -176,13 +176,13 @@
       });
       state.todos.forEach((t) => {
         if (t.dueDate && (filterClinic === 'all' || t.clinicId === filterClinic) && t.dueDate === dateStr) {
-          events.push({ label: t.text, style: 'color:#B8B3D6;background:#221D3F' });
+          events.push({ label: t.text, style: 'color:#A5A7B0;background:#1A1B21' });
         }
       });
       cells.push({
         dayNum: d,
-        bg: isToday ? '#2A2050' : '#1F1A3A',
-        dayColor: isToday ? '#B9A8FF' : '#F1EEFB',
+        bg: isToday ? '#1C2235' : '#16171C',
+        dayColor: isToday ? '#8891E8' : '#EDEDEF',
         dayWeight: isToday ? 700 : 500,
         events: events.slice(0, 2),
         hasMore: events.length > 2,
@@ -191,7 +191,7 @@
     }
     let next = 1;
     while (cells.length < 42) {
-      cells.push({ dayNum: next, bg: '#150F2C', dayColor: '#4A4468', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: next, bg: '#0F1013', dayColor: '#44464F', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
       next++;
     }
     return { cells, monthLabel: base.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) };
