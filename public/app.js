@@ -202,6 +202,13 @@
     return `<button class="pill-btn ${active ? 'pill-active' : 'pill-inactive'}" data-action="${action}" data-id="${esc(id)}">${esc(label)}</button>`;
   }
 
+  function logoMarkup(size) {
+    return `<img src="./icon.svg" width="${size}" height="${size}" style="border-radius:${Math.round(size * 0.22)}px;flex-shrink:0" alt="" />
+      <span style="font:800 ${Math.round(size * 0.68)}px 'Manrope';letter-spacing:-0.025em">
+        <span style="color:var(--text-primary)">Super</span><span style="color:var(--accent)">Planner</span>
+      </span>`;
+  }
+
   function render() {
     const s = state;
     const root = document.getElementById('app');
@@ -210,7 +217,7 @@
     root.innerHTML = `
       ${showBackdrop ? '<div class="backdrop" data-action="close-sidebar"></div>' : ''}
       <div class="sidebar ${ui.isMobile ? 'mobile' : ''} ${ui.isMobile && ui.sidebarOpen ? 'open' : ''}">
-        <div class="sidebar-logo">&#10022; SuperPlanner</div>
+        <div class="sidebar-logo">${logoMarkup(26)}</div>
         ${VIEWS.map(([key, label]) => `<div class="navitem ${ui.activeView === key ? 'active' : 'inactive'}" data-action="nav" data-id="${key}">${esc(label)}</div>`).join('')}
         <div class="sidebar-footer">${s.clinics.length} clinics<br/>Owner: ${esc(s.ownerPhone)}</div>
       </div>
@@ -218,7 +225,7 @@
         ${ui.isMobile ? `
           <div class="mobile-topbar">
             <button class="hamburger-btn" data-action="toggle-sidebar">&#9776;</button>
-            <div class="mobile-topbar-title">&#10022; SuperPlanner</div>
+            <div class="mobile-topbar-title">${logoMarkup(24)}</div>
           </div>` : ''}
         ${renderView()}
       </div>
@@ -308,7 +315,7 @@
           <div class="row-sub">${esc(l.clinicCode)} &middot; ${esc(l.clinicName)} &middot; expires ${l.expiryLabel}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <span style="font:500 12px 'Work Sans';color:var(--text-secondary)">${l.daysLabel}</span>
+          <span style="font:500 12px 'Manrope';color:var(--text-secondary)">${l.daysLabel}</span>
           <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
         </div>
       </div>`).join('');
@@ -414,7 +421,7 @@
               <div class="row-sub">${esc(l.clinicCode)} &middot; ${esc(l.clinicName)} &middot; expires ${l.expiryLabel}${l.notes ? ' &middot; ' + esc(l.notes) : ''}</div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
-              <span style="font:500 12px 'Work Sans';color:var(--text-secondary)">${l.daysLabel}</span>
+              <span style="font:500 12px 'Manrope';color:var(--text-secondary)">${l.daysLabel}</span>
               <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
               <button class="pill-btn pill-danger" data-action="remove-license" data-id="${l.id}">Remove</button>
             </div>
@@ -474,12 +481,12 @@
       <div class="reminders-wrap scrollarea">
         <div class="reminders-left">
           <div class="card card-hover">
-            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Push notifications on this device</div>
+            <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:12px">Push notifications on this device</div>
             <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin-bottom:10px">
               ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet — see Settings.'}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${!pushSupported() ? '<span style="font:400 12px \'Work Sans\';color:var(--text-tertiary)">Not supported in this browser.</span>' : ui.pushSubscribed
+              ${!pushSupported() ? '<span style="font:400 12px \'Manrope\';color:var(--text-tertiary)">Not supported in this browser.</span>' : ui.pushSubscribed
                 ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
                 : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
               <button class="pill-btn pill-outline" data-action="send-push-test" ${ui.busyPushTest ? 'disabled' : ''}>${ui.busyPushTest ? 'Sending…' : 'Send test push'}</button>
@@ -487,17 +494,17 @@
           </div>
 
           <div class="card card-hover">
-            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Owner WhatsApp number</div>
+            <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:12px">Owner WhatsApp number</div>
             <input class="field" type="text" value="${esc(s.ownerPhone)}" style="width:100%" data-action="set-owner-phone" />
-            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:8px">All expiry &amp; overdue alerts are sent here.</div>
+            <div style="font:400 11.5px 'Manrope';color:var(--text-secondary);margin-top:8px">All expiry &amp; overdue alerts are sent here.</div>
           </div>
 
           <div class="card card-hover">
-            <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Alert schedule</div>
+            <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:12px">Alert schedule</div>
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
               ${s.alertThresholds.map((t) => `
                 <div class="threshold-row">
-                  <span style="font:400 13px 'Work Sans';color:var(--text-primary)">${t.amount} ${t.unit === 'months' ? (t.amount === 1 ? 'month' : 'months') : (t.amount === 1 ? 'day' : 'days')} before expiry</span>
+                  <span style="font:400 13px 'Manrope';color:var(--text-primary)">${t.amount} ${t.unit === 'months' ? (t.amount === 1 ? 'month' : 'months') : (t.amount === 1 ? 'day' : 'days')} before expiry</span>
                   <span class="threshold-remove" data-action="remove-alert-threshold" data-id="${t.id}">&times;</span>
                 </div>`).join('') || '<div class="empty-note">No alert thresholds set — add one below.</div>'}
             </div>
@@ -520,8 +527,8 @@
           <div style="display:flex;flex-direction:column;gap:8px">
             ${visibleActivity.map((a) => `
               <div class="activity-item">
-                <div style="font:500 12.5px 'Work Sans';color:var(--text-primary)">${esc(a.text)}</div>
-                <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary);margin-top:3px">${esc(a.when)}${a.automated ? ' &middot; automatic' : ''}</div>
+                <div style="font:500 12.5px 'Manrope';color:var(--text-primary)">${esc(a.text)}</div>
+                <div style="font:400 11.5px 'Manrope';color:var(--text-secondary);margin-top:3px">${esc(a.when)}${a.automated ? ' &middot; automatic' : ''}</div>
               </div>`).join('') || '<div class="empty-note">No activity yet.</div>'}
           </div>
           ${s.activityLog.length > 3 ? `<button class="pill-btn pill-outline" style="margin-top:10px" data-action="toggle-activity-expanded">${ui.activityExpanded ? 'Show less' : 'See all (' + s.activityLog.length + ')'}</button>` : ''}
@@ -540,7 +547,7 @@
       </div>
       <div class="settings-wrap scrollarea">
         <div class="settings-col">
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">Clinics</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:12px">Clinics</div>
           <div style="display:flex;flex-direction:column;gap:10px">
             ${s.clinics.map((cl) => `
               <div class="clinic-row">
@@ -555,14 +562,14 @@
             <button class="pill-btn pill-accent" data-action="add-clinic">+ Add clinic</button>
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:24px 0 12px">Theme</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin:24px 0 12px">Theme</div>
           <div class="swatch-row">
             ${ACCENT_OPTIONS.map((color) => `<div class="swatch ${s.settings.accentColor === color ? 'selected' : ''}" style="background:${color}" data-action="set-accent" data-id="${color}"></div>`).join('')}
           </div>
         </div>
 
         <div class="settings-col" style="max-width:420px">
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:12px">License &amp; permit types</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:12px">License &amp; permit types</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             ${s.licenseTypes.map((lt) => `<span class="chip type-chip">${esc(lt.name)}<span data-action="remove-license-type" data-id="${lt.id}">&times;</span></span>`).join('')}
           </div>
@@ -573,30 +580,30 @@
         </div>
 
         <div class="settings-col" style="max-width:420px">
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin-bottom:6px">Data &amp; sync</div>
-          <div style="font:400 12px 'Work Sans';color:var(--text-secondary);margin-bottom:12px;line-height:1.5">This server is the shared source of truth for the owner and all clinic managers. Optionally connect a Google Sheet as an external backup/export via a small Apps Script bridge (paste the deployed Web App URL below).</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin-bottom:6px">Data &amp; sync</div>
+          <div style="font:400 12px 'Manrope';color:var(--text-secondary);margin-bottom:12px;line-height:1.5">This server is the shared source of truth for the owner and all clinic managers. Optionally connect a Google Sheet as an external backup/export via a small Apps Script bridge (paste the deployed Web App URL below).</div>
           <div class="card" style="display:flex;flex-direction:column;gap:10px">
             <input class="field" type="text" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(s.sheetUrl)}" style="width:100%" data-action="set-sheet-url" />
             <div style="display:flex;gap:8px">
               <button class="pill-btn pill-accent" style="flex:1" data-action="save-to-sheet" ${ui.sheetBusy ? 'disabled' : ''}>Save to Sheet</button>
               <button class="pill-btn pill-outline" style="flex:1" data-action="load-from-sheet" ${ui.sheetBusy ? 'disabled' : ''}>Load from Sheet</button>
             </div>
-            <div style="font:400 11.5px 'Work Sans';color:var(--text-secondary)">${s.lastSynced ? 'Last synced ' + esc(s.lastSynced) : 'Not synced yet'}</div>
-            ${ui.toast ? `<div style="font:500 12px 'Work Sans';color:var(--accent-tint-text);background:var(--accent-tint-bg);border-radius:6px;padding:8px 10px">${esc(ui.toast.text)}</div>` : ''}
+            <div style="font:400 11.5px 'Manrope';color:var(--text-secondary)">${s.lastSynced ? 'Last synced ' + esc(s.lastSynced) : 'Not synced yet'}</div>
+            ${ui.toast ? `<div style="font:500 12px 'Manrope';color:var(--accent-tint-text);background:var(--accent-tint-bg);border-radius:6px;padding:8px 10px">${esc(ui.toast.text)}</div>` : ''}
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:20px 0 6px">Push notifications</div>
-          <div style="font:400 12px 'Work Sans';color:var(--text-secondary);margin-bottom:10px;line-height:1.5">Free, no WhatsApp ban risk — alerts appear directly on this device's lock screen. On iPhone, "Add to Home Screen" first so notifications keep working in the background.</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin:20px 0 6px">Push notifications</div>
+          <div style="font:400 12px 'Manrope';color:var(--text-secondary);margin-bottom:10px;line-height:1.5">Free, no WhatsApp ban risk — alerts appear directly on this device's lock screen. On iPhone, "Add to Home Screen" first so notifications keep working in the background.</div>
           <div class="card" style="display:flex;flex-direction:column;gap:10px">
             <div class="wa-status-banner ${s.pushConfigured ? 'ok' : 'warn'}" style="margin:0">
               ${s.pushConfigured ? `Server ready — ${s.pushSubscriptionCount} device(s) subscribed.` : 'Server not configured yet. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (see SETUP.md).'}
             </div>
-            ${!pushSupported() ? '<div style="font:400 12px \'Work Sans\';color:var(--text-tertiary)">Notifications aren\'t supported in this browser.</div>' : ui.pushSubscribed
+            ${!pushSupported() ? '<div style="font:400 12px \'Manrope\';color:var(--text-tertiary)">Notifications aren\'t supported in this browser.</div>' : ui.pushSubscribed
               ? `<button class="pill-btn pill-outline" data-action="disable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : 'Disable on this device'}</button>`
               : `<button class="pill-btn pill-accent" data-action="enable-push" ${ui.pushBusy ? 'disabled' : ''}>${ui.pushBusy ? 'Working…' : '+ Enable on this device'}</button>`}
           </div>
 
-          <div style="font:600 14px 'Work Sans';color:var(--text-primary);margin:20px 0 6px">WhatsApp Cloud API</div>
+          <div style="font:600 14px 'Manrope';color:var(--text-primary);margin:20px 0 6px">WhatsApp Cloud API</div>
           <div class="wa-status-banner ${s.whatsappConfigured ? 'ok' : 'warn'}" style="margin:0">
             ${s.whatsappConfigured ? 'Configured — automated & manual reminders send for real.' : 'Not configured yet (optional — see SETUP.md for setup, and the ban-risk notes if considering unofficial libraries instead).'}
           </div>
