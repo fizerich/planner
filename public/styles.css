@@ -108,8 +108,13 @@ body {
 .license-item-type { font: 500 12.5px 'Manrope'; color: var(--text-primary); line-height: 1.35; }
 .license-item-meta { font: 400 11.5px 'Manrope'; color: var(--text-secondary); margin-top: 5px; }
 .empty-note { font: 400 12px 'Manrope'; color: var(--text-tertiary); padding: 8px 2px; }
-.todo-block { margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--border); }
-.todo-block-label { font: 600 11.5px 'Manrope'; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .3px; }
+.todo-block { margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--border); transition: transform .15s ease; }
+.todo-block:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.todo-block.section-dragging { opacity: .92; box-shadow: 0 12px 28px rgba(0,0,0,.4); border-radius: 8px; z-index: 5; position: relative; cursor: grabbing; }
+.todo-block-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.todo-block-label { font: 600 11.5px 'Manrope'; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .3px; }
+.section-drag-handle { color: var(--text-tertiary); font-size: 13px; letter-spacing: -2px; padding: 4px 8px; border-radius: 5px; cursor: grab; touch-action: none; user-select: none; transition: background .15s, color .15s; }
+.section-drag-handle:hover { background: var(--surface-alt); color: var(--text-secondary); }
 .todo-row { display: flex; align-items: center; gap: 9px; padding: 6px 2px; cursor: pointer; border-radius: 6px; transition: background .15s; }
 .todo-row:hover { background: rgba(255,255,255,.04); }
 .todo-row input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }

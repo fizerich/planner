@@ -55,6 +55,10 @@ function migrate(data) {
   if (data.settings && data.settings.accentColor === '#7C6FEA') {
     data.settings.accentColor = '#5E6AD2';
   }
+
+  if (data.settings && !Array.isArray(data.settings.dashboardSectionOrder)) {
+    data.settings.dashboardSectionOrder = ['events', 'todo', 'licenses'];
+  }
   return data;
 }
 

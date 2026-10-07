@@ -270,12 +270,61 @@
       </div>`;
 
     if (layout === 'columns') {
+      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 3)
+        ? s.settings.dashboardSectionOrder : ['events', 'todo', 'licenses'];
+      const sectionLabels = { events: 'Upcoming events', todo: 'To-do', licenses: 'Licenses' };
+
       const columns = s.clinics.map((c) => {
         const items = enriched.filter((l) => l.clinicId === c.id);
         const todos = s.todos.filter((t) => t.clinicId === c.id);
         const worstKey = items.some((l) => l.statusKey === 'overdue') ? 'overdue'
           : items.some((l) => l.statusKey === 'critical') ? 'critical'
           : items.some((l) => l.statusKey === 'warning') ? 'warning' : 'ok';
+
+        // "Events" = a calendar-style upcoming view combining license expiries and
+        // to-do due dates into one soonest-first list, distinct from the full
+        // reference lists below it.
+        const events = [
+          ...items.map((l) => ({ label: l.type, dateLabel: l.expiryLabel, daysLeft: l.daysLeft, daysLabel: l.daysLabel, style: l.statusStyle })),
+          ...todos.filter((t) => t.dueDate && !t.done).map((t) => {
+            const st = computeStatus(t.dueDate);
+            return { label: t.text, dateLabel: fmtDate(t.dueDate), daysLeft: st.daysLeft, daysLabel: daysText(st.daysLeft), style: chipStyle(st) };
+          }),
+        ].sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 4);
+
+        const sectionBody = {
+          events: events.map((ev) => `
+                  <div class="license-item">
+                    <div class="license-item-top">
+                      <div class="license-item-type">${esc(ev.label)}</div>
+                      <span class="chip" style="${ev.style}">${ev.daysLabel}</span>
+                    </div>
+                    <div class="license-item-meta">${ev.dateLabel}</div>
+                  </div>`).join('') || '<div class="empty-note">Nothing upcoming</div>',
+          todo: todos.map((t) => `
+                  <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
+                    <span style="text-decoration:${t.done ? 'line-through' : 'none'}">${esc(t.text)}</span>
+                  </label>`).join('') || '<div class="empty-note">Nothing pending</div>',
+          licenses: items.map((l) => `
+                  <div class="license-item">
+                    <div class="license-item-top">
+                      <div class="license-item-type">${esc(l.type)}</div>
+                      <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
+                    </div>
+                    <div class="license-item-meta">${l.expiryLabel} &middot; ${l.daysLabel}</div>
+                  </div>`).join('') || '<div class="empty-note">No licenses tracked yet</div>',
+        };
+
+        const sectionsHtml = sectionOrder.map((key) => `
+              <div class="todo-block" data-section="${key}">
+                <div class="todo-block-label-row">
+                  <div class="todo-block-label">${sectionLabels[key]}</div>
+                  <span class="section-drag-handle" data-reorder-handle title="Drag to reorder">&#8942;&#8942;</span>
+                </div>
+                ${sectionBody[key]}
+              </div>`).join('');
+
         return `
           <div class="dash-col">
             <div class="dash-col-head">
@@ -285,23 +334,7 @@
               </div>
               <div class="dash-col-name">${esc(c.name)}</div>
             </div>
-            <div class="dash-col-body scrollarea">
-              ${items.map((l) => `
-                <div class="license-item">
-                  <div class="license-item-top">
-                    <div class="license-item-type">${esc(l.type)}</div>
-                    <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
-                  </div>
-                  <div class="license-item-meta">${l.expiryLabel} &middot; ${l.daysLabel}</div>
-                </div>`).join('') || '<div class="empty-note">No licenses tracked yet</div>'}
-              <div class="todo-block">
-                <div class="todo-block-label">To-do</div>
-                ${todos.map((t) => `
-                  <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
-                    <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
-                    <span style="text-decoration:${t.done ? 'line-through' : 'none'}">${esc(t.text)}</span>
-                  </label>`).join('') || '<div class="empty-note">Nothing pending</div>'}
-              </div>
+            <div class="dash-col-body scrollarea">${sectionsHtml}
             </div>
           </div>`;
       }).join('');
@@ -758,6 +791,75 @@
       ui.isMobile = window.innerWidth < 880;
       if (wasMobile !== ui.isMobile) render();
     });
+
+    root.addEventListener('pointerdown', (e) => {
+      const handle = e.target.closest('[data-reorder-handle]');
+      if (handle) startSectionDrag(e, handle);
+    });
+  }
+
+  // Drag-to-reorder for the Upcoming events / To-do / Licenses sections on the
+  // dashboard. Uses Pointer Events (not native HTML5 drag-and-drop) so it works
+  // on touch screens, not just mouse. Order is a shared setting applied to every
+  // clinic column, so the drag only needs to run in the column the user grabbed.
+  function startSectionDrag(e, handle) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const block = handle.closest('[data-section]');
+    const body = block.parentElement;
+    const blocks = Array.from(body.children).filter((el) => el.hasAttribute('data-section'));
+    const order = blocks.map((b) => b.getAttribute('data-section'));
+    const startIndex = order.indexOf(block.getAttribute('data-section'));
+    const originalRects = blocks.map((b) => b.getBoundingClientRect());
+    const startY = e.clientY;
+    let currentIndex = startIndex;
+
+    e.preventDefault();
+    block.classList.add('section-dragging');
+    block.style.transition = 'none';
+
+    function shiftSiblings(newIndex) {
+      blocks.forEach((b, i) => {
+        if (i === startIndex) return;
+        let targetSlot = i;
+        if (startIndex < newIndex && i > startIndex && i <= newIndex) targetSlot = i - 1;
+        else if (startIndex > newIndex && i >= newIndex && i < startIndex) targetSlot = i + 1;
+        const dy = originalRects[targetSlot].top - originalRects[i].top;
+        b.style.transform = dy ? `translateY(${dy}px)` : '';
+      });
+    }
+
+    function onMove(ev) {
+      const dy = ev.clientY - startY;
+      block.style.transform = `translateY(${dy}px)`;
+      const draggedCenter = originalRects[startIndex].top + originalRects[startIndex].height / 2 + dy;
+      const passed = originalRects.filter((r) => draggedCenter >= r.top + r.height / 2).length;
+      const newIndex = Math.max(0, Math.min(blocks.length - 1, passed - 1));
+      if (newIndex !== currentIndex) {
+        currentIndex = newIndex;
+        shiftSiblings(currentIndex);
+      }
+    }
+
+    function onUp() {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      block.classList.remove('section-dragging');
+      block.style.transition = '';
+      block.style.transform = '';
+      blocks.forEach((b) => { if (b !== block) b.style.transform = ''; });
+
+      if (currentIndex !== startIndex) {
+        const newOrder = order.slice();
+        const [moved] = newOrder.splice(startIndex, 1);
+        newOrder.splice(currentIndex, 0, moved);
+        mutate(() => api('PATCH', '/api/settings', { dashboardSectionOrder: newOrder }));
+      }
+    }
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
   }
 
   // ---------- Google Sheets bridge (client-side, talks directly to the user's Apps Script URL) ----------

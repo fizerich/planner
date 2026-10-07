@@ -193,7 +193,12 @@
   ],
   "settings": {
     "accentColor": "#5E6AD2",
-    "dashboardLayout": "columns"
+    "dashboardLayout": "columns",
+    "dashboardSectionOrder": [
+      "events",
+      "todo",
+      "licenses"
+    ]
   },
   "activityLog": [],
   "sentLog": {},
