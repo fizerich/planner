@@ -56,17 +56,14 @@ function migrate(data) {
     data.settings.accentColor = '#5E6AD2';
   }
 
-  // "Upcoming events" is back as its own panel (to-do due dates only, licenses
-  // stay out of it since Licenses already has its own soonest-first panel) —
-  // make sure it's present, keeping the owner's existing todo/licenses order.
+  // Dropped the "Upcoming events" panel again — collapse any previously saved
+  // order down to just todo/licenses, keeping their relative order if the
+  // owner had set one.
   if (data.settings) {
-    const known = ['events', 'todo', 'licenses'];
-    let order = Array.isArray(data.settings.dashboardSectionOrder)
-      ? data.settings.dashboardSectionOrder.filter((sec) => known.includes(sec))
+    const order = Array.isArray(data.settings.dashboardSectionOrder)
+      ? data.settings.dashboardSectionOrder.filter((sec) => sec === 'todo' || sec === 'licenses')
       : [];
-    if (!order.includes('events')) order = ['events', ...order];
-    known.forEach((sec) => { if (!order.includes(sec)) order.push(sec); });
-    data.settings.dashboardSectionOrder = order;
+    data.settings.dashboardSectionOrder = order.length === 2 ? order : ['licenses', 'todo'];
   }
   if (data.settings && !data.settings.themeMode) {
     data.settings.themeMode = 'dark';

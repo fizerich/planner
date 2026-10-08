@@ -84,7 +84,7 @@
     pushBusy: false,
     activityExpanded: false,
     quickAdd: null,
-    quickAddForm: { text: '', dueDate: '', typeId: '', expiry: '' },
+    quickAddForm: { text: '', dueDate: '', typeId: '', expiry: '', notes: '' },
   };
 
   function setNested(obj, path, value) {
@@ -220,7 +220,10 @@
       return `
         <div class="quick-add-form">
           <input class="field" type="text" placeholder="New task..." value="${esc(ui.quickAddForm.text)}" data-action="set-quick-todo-text" autofocus />
-          <input class="field" type="date" value="${esc(ui.quickAddForm.dueDate)}" data-action="set-quick-todo-date" />
+          <div class="field-label-group">
+            <label class="field-label">Due date (optional)</label>
+            <input class="field" type="date" value="${esc(ui.quickAddForm.dueDate)}" data-action="set-quick-todo-date" />
+          </div>
           <div class="quick-add-actions">
             <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
             <button class="pill-btn pill-accent" data-action="submit-quick-todo">Add</button>
@@ -229,10 +232,20 @@
     }
     return `
       <div class="quick-add-form">
-        <select class="field" data-action="set-quick-license-type">
-          ${state.licenseTypes.map((lt) => `<option value="${lt.id}" ${ui.quickAddForm.typeId === lt.id ? 'selected' : ''}>${esc(lt.name)}</option>`).join('')}
-        </select>
-        <input class="field" type="date" value="${esc(ui.quickAddForm.expiry)}" data-action="set-quick-license-expiry" />
+        <div class="field-label-group">
+          <label class="field-label">License type</label>
+          <select class="field" data-action="set-quick-license-type">
+            ${state.licenseTypes.map((lt) => `<option value="${lt.id}" ${ui.quickAddForm.typeId === lt.id ? 'selected' : ''}>${esc(lt.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field-label-group">
+          <label class="field-label">Expiry date</label>
+          <input class="field" type="date" value="${esc(ui.quickAddForm.expiry)}" data-action="set-quick-license-expiry" />
+        </div>
+        <div class="field-label-group">
+          <label class="field-label">Notes (optional)</label>
+          <input class="field" type="text" placeholder="e.g. renewal reference number" value="${esc(ui.quickAddForm.notes)}" data-action="set-quick-license-notes" />
+        </div>
         <div class="quick-add-actions">
           <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
           <button class="pill-btn pill-accent" data-action="submit-quick-license">Add</button>
@@ -308,9 +321,9 @@
       </div>`;
 
     if (layout === 'columns') {
-      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 3)
-        ? s.settings.dashboardSectionOrder : ['events', 'todo', 'licenses'];
-      const sectionLabels = { events: 'Upcoming events', todo: 'To-do', licenses: 'Licenses' };
+      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 2)
+        ? s.settings.dashboardSectionOrder : ['licenses', 'todo'];
+      const sectionLabels = { todo: 'To-do', licenses: 'Licenses' };
 
       const columns = s.clinics.map((c) => {
         const items = enriched.filter((l) => l.clinicId === c.id);
@@ -319,22 +332,7 @@
           : items.some((l) => l.statusKey === 'critical') ? 'critical'
           : items.some((l) => l.statusKey === 'warning') ? 'warning' : 'ok';
 
-        // "Upcoming events" is to-do due dates only — license expiries already
-        // have their own soonest-first panel, so they don't need to show twice.
-        const upcoming = todos.filter((t) => t.dueDate && !t.done).map((t) => {
-          const st = computeStatus(t.dueDate);
-          return { label: t.text, dateLabel: fmtDate(t.dueDate), daysLeft: st.daysLeft, daysLabel: daysText(st.daysLeft), style: chipStyle(st) };
-        }).sort((a, b) => a.daysLeft - b.daysLeft);
-
         const sectionBody = {
-          events: upcoming.map((ev) => `
-                  <div class="license-item">
-                    <div class="license-item-top">
-                      <div class="license-item-type">${esc(ev.label)}</div>
-                      <span class="chip" style="${ev.style}">${ev.daysLabel}</span>
-                    </div>
-                    <div class="license-item-meta">${ev.dateLabel}</div>
-                  </div>`).join('') || '<div class="empty-note">Nothing upcoming</div>',
           todo: todos.map((t) => `
                   <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
                     <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
@@ -746,7 +744,7 @@
         case 'open-quick-add': {
           const kind = section === 'licenses' ? 'license' : 'todo';
           ui.quickAdd = { clinicId: id, section, kind };
-          ui.quickAddForm = { text: '', dueDate: '', typeId: (state.licenseTypes[0] || {}).id || '', expiry: '' };
+          ui.quickAddForm = { text: '', dueDate: '', typeId: (state.licenseTypes[0] || {}).id || '', expiry: '', notes: '' };
           render();
           break;
         }
@@ -763,7 +761,7 @@
         case 'submit-quick-license': {
           if (!ui.quickAddForm.typeId || !ui.quickAddForm.expiry) { showToast('error', 'Pick a license type and expiry date.'); break; }
           const clinicId = ui.quickAdd.clinicId;
-          await mutate(() => api('POST', '/api/licenses', { clinicId, typeId: ui.quickAddForm.typeId, expiry: ui.quickAddForm.expiry, notes: '' }));
+          await mutate(() => api('POST', '/api/licenses', { clinicId, typeId: ui.quickAddForm.typeId, expiry: ui.quickAddForm.expiry, notes: ui.quickAddForm.notes }));
           ui.quickAdd = null;
           render();
           break;
@@ -844,6 +842,7 @@
         case 'set-quick-todo-date': ui.quickAddForm.dueDate = value; break;
         case 'set-quick-license-type': ui.quickAddForm.typeId = value; break;
         case 'set-quick-license-expiry': ui.quickAddForm.expiry = value; break;
+        case 'set-quick-license-notes': ui.quickAddForm.notes = value; break;
         case 'set-new-clinic-code': ui.newClinicCode = value; break;
         case 'set-new-clinic-name': ui.newClinicName = value; break;
         case 'set-new-license-type-name': ui.newLicenseTypeName = value; break;

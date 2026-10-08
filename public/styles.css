@@ -185,6 +185,8 @@ body {
 .quick-add-form { display: flex; flex-direction: column; gap: 7px; background: var(--surface); border: 1px solid var(--accent-tint-border); border-radius: 8px; padding: 10px; margin-bottom: 8px; animation: item-in .15s ease; }
 .quick-add-actions { display: flex; gap: 6px; justify-content: flex-end; }
 .quick-add-form .field { width: 100%; }
+.field-label-group { display: flex; flex-direction: column; gap: 3px; }
+.field-label { font: 500 11px 'Manrope'; color: var(--text-secondary); }
 .todo-row { display: flex; align-items: center; gap: 9px; padding: 6px 2px; cursor: pointer; border-radius: 6px; transition: background .15s; }
 .todo-row:hover { background: var(--surface-alt); }
 .todo-row input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
