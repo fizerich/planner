@@ -308,9 +308,9 @@
       </div>`;
 
     if (layout === 'columns') {
-      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 2)
-        ? s.settings.dashboardSectionOrder : ['licenses', 'todo'];
-      const sectionLabels = { todo: 'To-do', licenses: 'Licenses' };
+      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 3)
+        ? s.settings.dashboardSectionOrder : ['events', 'todo', 'licenses'];
+      const sectionLabels = { events: 'Upcoming events', todo: 'To-do', licenses: 'Licenses' };
 
       const columns = s.clinics.map((c) => {
         const items = enriched.filter((l) => l.clinicId === c.id);
@@ -319,7 +319,22 @@
           : items.some((l) => l.statusKey === 'critical') ? 'critical'
           : items.some((l) => l.statusKey === 'warning') ? 'warning' : 'ok';
 
+        // "Upcoming events" is to-do due dates only — license expiries already
+        // have their own soonest-first panel, so they don't need to show twice.
+        const upcoming = todos.filter((t) => t.dueDate && !t.done).map((t) => {
+          const st = computeStatus(t.dueDate);
+          return { label: t.text, dateLabel: fmtDate(t.dueDate), daysLeft: st.daysLeft, daysLabel: daysText(st.daysLeft), style: chipStyle(st) };
+        }).sort((a, b) => a.daysLeft - b.daysLeft);
+
         const sectionBody = {
+          events: upcoming.map((ev) => `
+                  <div class="license-item">
+                    <div class="license-item-top">
+                      <div class="license-item-type">${esc(ev.label)}</div>
+                      <span class="chip" style="${ev.style}">${ev.daysLabel}</span>
+                    </div>
+                    <div class="license-item-meta">${ev.dateLabel}</div>
+                  </div>`).join('') || '<div class="empty-note">Nothing upcoming</div>',
           todo: todos.map((t) => `
                   <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
                     <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
@@ -729,7 +744,7 @@
           break;
         }
         case 'open-quick-add': {
-          const kind = section === 'todo' ? 'todo' : 'license';
+          const kind = section === 'licenses' ? 'license' : 'todo';
           ui.quickAdd = { clinicId: id, section, kind };
           ui.quickAddForm = { text: '', dueDate: '', typeId: (state.licenseTypes[0] || {}).id || '', expiry: '' };
           render();

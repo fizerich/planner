@@ -56,14 +56,17 @@ function migrate(data) {
     data.settings.accentColor = '#5E6AD2';
   }
 
-  // Dropped the "Upcoming events" section (merged into Licenses, which already
-  // sorts soonest-first) — collapse any previously saved 3-item order down to
-  // just todo/licenses, keeping their relative order if the owner had set one.
+  // "Upcoming events" is back as its own panel (to-do due dates only, licenses
+  // stay out of it since Licenses already has its own soonest-first panel) —
+  // make sure it's present, keeping the owner's existing todo/licenses order.
   if (data.settings) {
-    const order = Array.isArray(data.settings.dashboardSectionOrder)
-      ? data.settings.dashboardSectionOrder.filter((sec) => sec === 'todo' || sec === 'licenses')
+    const known = ['events', 'todo', 'licenses'];
+    let order = Array.isArray(data.settings.dashboardSectionOrder)
+      ? data.settings.dashboardSectionOrder.filter((sec) => known.includes(sec))
       : [];
-    data.settings.dashboardSectionOrder = order.length === 2 ? order : ['licenses', 'todo'];
+    if (!order.includes('events')) order = ['events', ...order];
+    known.forEach((sec) => { if (!order.includes(sec)) order.push(sec); });
+    data.settings.dashboardSectionOrder = order;
   }
   if (data.settings && !data.settings.themeMode) {
     data.settings.themeMode = 'dark';
