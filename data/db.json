@@ -198,7 +198,8 @@
       "events",
       "todo",
       "licenses"
-    ]
+    ],
+    "themeMode": "dark"
   },
   "activityLog": [],
   "sentLog": {},

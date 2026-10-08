@@ -59,6 +59,9 @@ function migrate(data) {
   if (data.settings && !Array.isArray(data.settings.dashboardSectionOrder)) {
     data.settings.dashboardSectionOrder = ['events', 'todo', 'licenses'];
   }
+  if (data.settings && !data.settings.themeMode) {
+    data.settings.themeMode = 'dark';
+  }
   return data;
 }
 

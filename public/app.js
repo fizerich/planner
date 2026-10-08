@@ -83,6 +83,8 @@
     pushSubscribed: false,
     pushBusy: false,
     activityExpanded: false,
+    quickAdd: null,
+    quickAddForm: { text: '', dueDate: '', typeId: '', expiry: '' },
   };
 
   function setNested(obj, path, value) {
@@ -103,9 +105,14 @@
     showToast._t = setTimeout(() => { ui.toast = null; render(); }, ms || 4500);
   }
 
+  function applyThemeVars() {
+    document.documentElement.style.setProperty('--accent', state.settings.accentColor);
+    document.documentElement.setAttribute('data-theme', state.settings.themeMode || 'dark');
+  }
+
   async function refresh() {
     state = await api('GET', '/api/state');
-    document.documentElement.style.setProperty('--accent', state.settings.accentColor);
+    applyThemeVars();
   }
 
   async function mutate(fn) {
@@ -113,7 +120,7 @@
       const result = await fn();
       if (result && result.state) state = result.state;
       else if (result) state = result;
-      document.documentElement.style.setProperty('--accent', state.settings.accentColor);
+      applyThemeVars();
       render();
       return result;
     } catch (err) {
@@ -161,7 +168,7 @@
     const prevMonthDays = new Date(year, month, 0).getDate();
     const cells = [];
     for (let i = startWeekday - 1; i >= 0; i--) {
-      cells.push({ dayNum: prevMonthDays - i, bg: '#0F1013', dayColor: '#44464F', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: prevMonthDays - i, bg: 'var(--calendar-dim-bg)', dayColor: 'var(--calendar-dim-text)', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d);
@@ -176,13 +183,13 @@
       });
       state.todos.forEach((t) => {
         if (t.dueDate && (filterClinic === 'all' || t.clinicId === filterClinic) && t.dueDate === dateStr) {
-          events.push({ label: t.text, style: 'color:#A5A7B0;background:#1A1B21' });
+          events.push({ label: t.text, style: 'color:var(--text-secondary);background:var(--surface-alt)' });
         }
       });
       cells.push({
         dayNum: d,
-        bg: isToday ? '#1C2235' : '#16171C',
-        dayColor: isToday ? '#8891E8' : '#EDEDEF',
+        bg: isToday ? 'var(--calendar-today-bg)' : 'var(--surface)',
+        dayColor: isToday ? 'var(--accent)' : 'var(--text-primary)',
         dayWeight: isToday ? 700 : 500,
         events: events.slice(0, 2),
         hasMore: events.length > 2,
@@ -191,7 +198,7 @@
     }
     let next = 1;
     while (cells.length < 42) {
-      cells.push({ dayNum: next, bg: '#0F1013', dayColor: '#44464F', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
+      cells.push({ dayNum: next, bg: 'var(--calendar-dim-bg)', dayColor: 'var(--calendar-dim-text)', dayWeight: 500, events: [], hasMore: false, moreCount: 0 });
       next++;
     }
     return { cells, monthLabel: base.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) };
@@ -200,6 +207,49 @@
   // ---------- render ----------
   function pillBtn({ label, active, action, id }) {
     return `<button class="pill-btn ${active ? 'pill-active' : 'pill-inactive'}" data-action="${action}" data-id="${esc(id)}">${esc(label)}</button>`;
+  }
+
+  // Inline quick-add panel shown inside a dashboard section when its "+" button
+  // is clicked, so the owner can add a to-do/license straight into that clinic's
+  // column without going through the full-page form and picking a clinic.
+  function quickAddPanel(clinicId, section) {
+    const qa = ui.quickAdd;
+    if (!qa || qa.clinicId !== clinicId || qa.section !== section) return '';
+
+    if (qa.kind === 'todo') {
+      return `
+        <div class="quick-add-form">
+          <input class="field" type="text" placeholder="New task..." value="${esc(ui.quickAddForm.text)}" data-action="set-quick-todo-text" autofocus />
+          <input class="field" type="date" value="${esc(ui.quickAddForm.dueDate)}" data-action="set-quick-todo-date" />
+          <div class="quick-add-actions">
+            <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
+            <button class="pill-btn pill-accent" data-action="submit-quick-todo">Add</button>
+          </div>
+        </div>`;
+    }
+    if (qa.kind === 'license') {
+      return `
+        <div class="quick-add-form">
+          <select class="field" data-action="set-quick-license-type">
+            ${state.licenseTypes.map((lt) => `<option value="${lt.id}" ${ui.quickAddForm.typeId === lt.id ? 'selected' : ''}>${esc(lt.name)}</option>`).join('')}
+          </select>
+          <input class="field" type="date" value="${esc(ui.quickAddForm.expiry)}" data-action="set-quick-license-expiry" />
+          <div class="quick-add-actions">
+            <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
+            <button class="pill-btn pill-accent" data-action="submit-quick-license">Add</button>
+          </div>
+        </div>`;
+    }
+    // Events is a derived view (license expiries + to-do due dates), not its own
+    // data — let the owner pick which kind of item they actually want to add.
+    return `
+      <div class="quick-add-form">
+        <div class="quick-add-kind-row">
+          <button class="pill-btn pill-outline" data-action="quick-add-pick-kind" data-id="todo">+ To-do</button>
+          <button class="pill-btn pill-outline" data-action="quick-add-pick-kind" data-id="license">+ License</button>
+          <button class="pill-btn pill-danger" data-action="close-quick-add">Cancel</button>
+        </div>
+      </div>`;
   }
 
   function logoMarkup(size) {
@@ -320,8 +370,12 @@
               <div class="todo-block" data-section="${key}">
                 <div class="todo-block-label-row">
                   <div class="todo-block-label">${sectionLabels[key]}</div>
-                  <span class="section-drag-handle" data-reorder-handle title="Drag to reorder">&#8942;&#8942;</span>
+                  <div class="todo-block-label-actions">
+                    <button class="quick-add-btn" data-action="open-quick-add" data-section="${key}" data-id="${c.id}" title="Quick add">+</button>
+                    <span class="section-drag-handle" data-reorder-handle title="Drag to reorder">&#8942;&#8942;</span>
+                  </div>
                 </div>
+                ${quickAddPanel(c.id, key)}
                 ${sectionBody[key]}
               </div>`).join('');
 
@@ -596,6 +650,10 @@
           </div>
 
           <div style="font:600 14px 'Manrope';color:var(--text-primary);margin:24px 0 12px">Theme</div>
+          <div class="layout-toggle" style="margin-bottom:12px">
+            ${pillBtn({ label: 'Dark', active: (s.settings.themeMode || 'dark') === 'dark', action: 'set-theme-mode', id: 'dark' })}
+            ${pillBtn({ label: 'Light', active: s.settings.themeMode === 'light', action: 'set-theme-mode', id: 'light' })}
+          </div>
           <div class="swatch-row">
             ${ACCENT_OPTIONS.map((color) => `<div class="swatch ${s.settings.accentColor === color ? 'selected' : ''}" style="background:${color}" data-action="set-accent" data-id="${color}"></div>`).join('')}
           </div>
@@ -653,6 +711,7 @@
       if (!el || el.matches('input,select,textarea')) return;
       const action = el.getAttribute('data-action');
       const id = el.getAttribute('data-id');
+      const section = el.getAttribute('data-section');
 
       switch (action) {
         case 'nav':
@@ -665,6 +724,8 @@
           await mutate(() => api('PATCH', '/api/settings', { dashboardLayout: id })); break;
         case 'set-accent':
           await mutate(() => api('PATCH', '/api/settings', { accentColor: id })); break;
+        case 'set-theme-mode':
+          await mutate(() => api('PATCH', '/api/settings', { themeMode: id })); break;
         case 'calendar-filter-clinic':
           ui.calendarFilterClinic = id; render(); break;
         case 'calendar-prev':
@@ -696,6 +757,35 @@
         case 'toggle-todo': {
           const t = state.todos.find((x) => x.id === id);
           await mutate(() => api('PATCH', '/api/todos/' + id, { done: t ? !t.done : true }));
+          break;
+        }
+        case 'open-quick-add': {
+          const kind = section === 'todo' ? 'todo' : section === 'licenses' ? 'license' : null;
+          ui.quickAdd = { clinicId: id, section, kind };
+          ui.quickAddForm = { text: '', dueDate: '', typeId: (state.licenseTypes[0] || {}).id || '', expiry: '' };
+          render();
+          break;
+        }
+        case 'quick-add-pick-kind':
+          if (ui.quickAdd) ui.quickAdd.kind = id;
+          render();
+          break;
+        case 'close-quick-add':
+          ui.quickAdd = null; render(); break;
+        case 'submit-quick-todo': {
+          if (!ui.quickAddForm.text.trim()) { showToast('error', 'Type a task first.'); break; }
+          const clinicId = ui.quickAdd.clinicId;
+          await mutate(() => api('POST', '/api/todos', { clinicId, text: ui.quickAddForm.text, dueDate: ui.quickAddForm.dueDate }));
+          ui.quickAdd = null;
+          render();
+          break;
+        }
+        case 'submit-quick-license': {
+          if (!ui.quickAddForm.typeId || !ui.quickAddForm.expiry) { showToast('error', 'Pick a license type and expiry date.'); break; }
+          const clinicId = ui.quickAdd.clinicId;
+          await mutate(() => api('POST', '/api/licenses', { clinicId, typeId: ui.quickAddForm.typeId, expiry: ui.quickAddForm.expiry, notes: '' }));
+          ui.quickAdd = null;
+          render();
           break;
         }
         case 'add-clinic':
@@ -770,6 +860,10 @@
         case 'set-new-todo-text': ui.newTodo.text = value; break;
         case 'set-new-todo-clinic': ui.newTodo.clinicId = value; break;
         case 'set-new-todo-date': ui.newTodo.dueDate = value; break;
+        case 'set-quick-todo-text': ui.quickAddForm.text = value; break;
+        case 'set-quick-todo-date': ui.quickAddForm.dueDate = value; break;
+        case 'set-quick-license-type': ui.quickAddForm.typeId = value; break;
+        case 'set-quick-license-expiry': ui.quickAddForm.expiry = value; break;
         case 'set-new-clinic-code': ui.newClinicCode = value; break;
         case 'set-new-clinic-name': ui.newClinicName = value; break;
         case 'set-new-license-type-name': ui.newLicenseTypeName = value; break;

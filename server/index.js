@@ -49,18 +49,22 @@ app.put('/api/state/bulk-import', async (req, res) => {
 const DASHBOARD_SECTIONS = ['events', 'todo', 'licenses'];
 
 app.patch('/api/settings', async (req, res) => {
-  const { ownerPhone, accentColor, dashboardLayout, dashboardSectionOrder, sheetUrl, lastSynced } = req.body || {};
+  const { ownerPhone, accentColor, dashboardLayout, dashboardSectionOrder, themeMode, sheetUrl, lastSynced } = req.body || {};
   if (dashboardSectionOrder !== undefined) {
     const valid = Array.isArray(dashboardSectionOrder)
       && dashboardSectionOrder.length === DASHBOARD_SECTIONS.length
       && DASHBOARD_SECTIONS.every((sec) => dashboardSectionOrder.includes(sec));
     if (!valid) return res.status(400).json({ error: 'dashboardSectionOrder must contain exactly: ' + DASHBOARD_SECTIONS.join(', ') });
   }
+  if (themeMode !== undefined && !['dark', 'light'].includes(themeMode)) {
+    return res.status(400).json({ error: 'themeMode must be "dark" or "light"' });
+  }
   const state = await db.update((s) => {
     if (ownerPhone !== undefined) s.ownerPhone = ownerPhone;
     if (accentColor !== undefined) s.settings.accentColor = accentColor;
     if (dashboardLayout !== undefined) s.settings.dashboardLayout = dashboardLayout;
     if (dashboardSectionOrder !== undefined) s.settings.dashboardSectionOrder = dashboardSectionOrder;
+    if (themeMode !== undefined) s.settings.themeMode = themeMode;
     if (sheetUrl !== undefined) s.sheetUrl = sheetUrl;
     if (lastSynced !== undefined) s.lastSynced = lastSynced;
   });
