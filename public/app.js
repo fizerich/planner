@@ -227,27 +227,15 @@
           </div>
         </div>`;
     }
-    if (qa.kind === 'license') {
-      return `
-        <div class="quick-add-form">
-          <select class="field" data-action="set-quick-license-type">
-            ${state.licenseTypes.map((lt) => `<option value="${lt.id}" ${ui.quickAddForm.typeId === lt.id ? 'selected' : ''}>${esc(lt.name)}</option>`).join('')}
-          </select>
-          <input class="field" type="date" value="${esc(ui.quickAddForm.expiry)}" data-action="set-quick-license-expiry" />
-          <div class="quick-add-actions">
-            <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
-            <button class="pill-btn pill-accent" data-action="submit-quick-license">Add</button>
-          </div>
-        </div>`;
-    }
-    // Events is a derived view (license expiries + to-do due dates), not its own
-    // data — let the owner pick which kind of item they actually want to add.
     return `
       <div class="quick-add-form">
-        <div class="quick-add-kind-row">
-          <button class="pill-btn pill-outline" data-action="quick-add-pick-kind" data-id="todo">+ To-do</button>
-          <button class="pill-btn pill-outline" data-action="quick-add-pick-kind" data-id="license">+ License</button>
-          <button class="pill-btn pill-danger" data-action="close-quick-add">Cancel</button>
+        <select class="field" data-action="set-quick-license-type">
+          ${state.licenseTypes.map((lt) => `<option value="${lt.id}" ${ui.quickAddForm.typeId === lt.id ? 'selected' : ''}>${esc(lt.name)}</option>`).join('')}
+        </select>
+        <input class="field" type="date" value="${esc(ui.quickAddForm.expiry)}" data-action="set-quick-license-expiry" />
+        <div class="quick-add-actions">
+          <button class="pill-btn pill-outline" data-action="close-quick-add">Cancel</button>
+          <button class="pill-btn pill-accent" data-action="submit-quick-license">Add</button>
         </div>
       </div>`;
   }
@@ -320,9 +308,9 @@
       </div>`;
 
     if (layout === 'columns') {
-      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 3)
-        ? s.settings.dashboardSectionOrder : ['events', 'todo', 'licenses'];
-      const sectionLabels = { events: 'Upcoming events', todo: 'To-do', licenses: 'Licenses' };
+      const sectionOrder = (s.settings.dashboardSectionOrder && s.settings.dashboardSectionOrder.length === 2)
+        ? s.settings.dashboardSectionOrder : ['licenses', 'todo'];
+      const sectionLabels = { todo: 'To-do', licenses: 'Licenses' };
 
       const columns = s.clinics.map((c) => {
         const items = enriched.filter((l) => l.clinicId === c.id);
@@ -331,26 +319,7 @@
           : items.some((l) => l.statusKey === 'critical') ? 'critical'
           : items.some((l) => l.statusKey === 'warning') ? 'warning' : 'ok';
 
-        // "Events" = a calendar-style upcoming view combining license expiries and
-        // to-do due dates into one soonest-first list, distinct from the full
-        // reference lists below it.
-        const events = [
-          ...items.map((l) => ({ label: l.type, dateLabel: l.expiryLabel, daysLeft: l.daysLeft, daysLabel: l.daysLabel, style: l.statusStyle })),
-          ...todos.filter((t) => t.dueDate && !t.done).map((t) => {
-            const st = computeStatus(t.dueDate);
-            return { label: t.text, dateLabel: fmtDate(t.dueDate), daysLeft: st.daysLeft, daysLabel: daysText(st.daysLeft), style: chipStyle(st) };
-          }),
-        ].sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 4);
-
         const sectionBody = {
-          events: events.map((ev) => `
-                  <div class="license-item">
-                    <div class="license-item-top">
-                      <div class="license-item-type">${esc(ev.label)}</div>
-                      <span class="chip" style="${ev.style}">${ev.daysLabel}</span>
-                    </div>
-                    <div class="license-item-meta">${ev.dateLabel}</div>
-                  </div>`).join('') || '<div class="empty-note">Nothing upcoming</div>',
           todo: todos.map((t) => `
                   <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
                     <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
@@ -760,16 +729,12 @@
           break;
         }
         case 'open-quick-add': {
-          const kind = section === 'todo' ? 'todo' : section === 'licenses' ? 'license' : null;
+          const kind = section === 'todo' ? 'todo' : 'license';
           ui.quickAdd = { clinicId: id, section, kind };
           ui.quickAddForm = { text: '', dueDate: '', typeId: (state.licenseTypes[0] || {}).id || '', expiry: '' };
           render();
           break;
         }
-        case 'quick-add-pick-kind':
-          if (ui.quickAdd) ui.quickAdd.kind = id;
-          render();
-          break;
         case 'close-quick-add':
           ui.quickAdd = null; render(); break;
         case 'submit-quick-todo': {
@@ -892,8 +857,8 @@
     });
   }
 
-  // Drag-to-reorder for the Upcoming events / To-do / Licenses sections on the
-  // dashboard. Uses Pointer Events (not native HTML5 drag-and-drop) so it works
+  // Drag-to-reorder for the Licenses / To-do sections on the dashboard. Uses
+  // Pointer Events (not native HTML5 drag-and-drop) so it works
   // on touch screens, not just mouse. Order is a shared setting applied to every
   // clinic column, so the drag only needs to run in the column the user grabbed.
   function startSectionDrag(e, handle) {

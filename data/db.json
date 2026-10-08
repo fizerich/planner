@@ -195,9 +195,8 @@
     "accentColor": "#5E6AD2",
     "dashboardLayout": "columns",
     "dashboardSectionOrder": [
-      "events",
-      "todo",
-      "licenses"
+      "licenses",
+      "todo"
     ],
     "themeMode": "dark"
   },

@@ -56,8 +56,14 @@ function migrate(data) {
     data.settings.accentColor = '#5E6AD2';
   }
 
-  if (data.settings && !Array.isArray(data.settings.dashboardSectionOrder)) {
-    data.settings.dashboardSectionOrder = ['events', 'todo', 'licenses'];
+  // Dropped the "Upcoming events" section (merged into Licenses, which already
+  // sorts soonest-first) — collapse any previously saved 3-item order down to
+  // just todo/licenses, keeping their relative order if the owner had set one.
+  if (data.settings) {
+    const order = Array.isArray(data.settings.dashboardSectionOrder)
+      ? data.settings.dashboardSectionOrder.filter((sec) => sec === 'todo' || sec === 'licenses')
+      : [];
+    data.settings.dashboardSectionOrder = order.length === 2 ? order : ['licenses', 'todo'];
   }
   if (data.settings && !data.settings.themeMode) {
     data.settings.themeMode = 'dark';

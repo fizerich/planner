@@ -46,7 +46,7 @@ app.put('/api/state/bulk-import', async (req, res) => {
 });
 
 // ---------- settings ----------
-const DASHBOARD_SECTIONS = ['events', 'todo', 'licenses'];
+const DASHBOARD_SECTIONS = ['todo', 'licenses'];
 
 app.patch('/api/settings', async (req, res) => {
   const { ownerPhone, accentColor, dashboardLayout, dashboardSectionOrder, themeMode, sheetUrl, lastSynced } = req.body || {};

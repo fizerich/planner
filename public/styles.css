@@ -184,7 +184,6 @@ body {
 .quick-add-btn:active { transform: scale(.88); }
 .quick-add-form { display: flex; flex-direction: column; gap: 7px; background: var(--surface); border: 1px solid var(--accent-tint-border); border-radius: 8px; padding: 10px; margin-bottom: 8px; animation: item-in .15s ease; }
 .quick-add-actions { display: flex; gap: 6px; justify-content: flex-end; }
-.quick-add-kind-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .quick-add-form .field { width: 100%; }
 .todo-row { display: flex; align-items: center; gap: 9px; padding: 6px 2px; cursor: pointer; border-radius: 6px; transition: background .15s; }
 .todo-row:hover { background: var(--surface-alt); }
