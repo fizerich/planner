@@ -218,8 +218,8 @@
   function statIcon(name) {
     return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${STAT_ICONS[name]}</svg>`;
   }
-  function statTile({ icon, color, value, label }) {
-    return `<div class="stat-tile">
+  function statTile({ icon, color, value, label, goTo }) {
+    return `<div class="stat-tile${goTo ? ' stat-tile-clickable' : ''}" ${goTo ? `data-action="dashboard-stat-click" data-id="${esc(goTo)}"` : ''}>
       <div class="stat-icon" style="background:color-mix(in srgb, ${color} 16%, transparent);color:${color}">${statIcon(icon)}</div>
       <div>
         <div class="stat-value">${esc(value)}</div>
@@ -357,10 +357,10 @@
         </div>
       </div>
       <div class="stat-grid">
-        ${statTile({ icon: 'folder', color: 'var(--accent)', value: s.licenses.length, label: 'Licenses tracked' })}
-        ${statTile({ icon: 'clock', color: STATUS.critical.fg, value: criticalCount, label: 'Due soon' })}
-        ${statTile({ icon: 'alert', color: STATUS.overdue.fg, value: overdueCount, label: 'Overdue' })}
-        ${statTile({ icon: 'check', color: STATUS.ok.fg, value: openTodoCount, label: 'Open to-dos' })}
+        ${statTile({ icon: 'folder', color: 'var(--accent)', value: s.licenses.length, label: 'Licenses tracked', goTo: 'licenses:all' })}
+        ${statTile({ icon: 'clock', color: STATUS.critical.fg, value: criticalCount, label: 'Due soon', goTo: 'licenses:critical' })}
+        ${statTile({ icon: 'alert', color: STATUS.overdue.fg, value: overdueCount, label: 'Overdue', goTo: 'licenses:overdue' })}
+        ${statTile({ icon: 'check', color: STATUS.ok.fg, value: openTodoCount, label: 'Open to-dos', goTo: 'todo' })}
       </div>`;
 
     if (layout === 'columns') {
@@ -747,6 +747,14 @@
       switch (action) {
         case 'nav':
           ui.activeView = id; ui.sidebarOpen = false; render(); break;
+        case 'dashboard-stat-click': {
+          const [view, statusFilter] = id.split(':');
+          ui.activeView = view;
+          if (view === 'licenses') { ui.licenseFilterStatus = statusFilter; ui.licenseFilterClinic = 'all'; }
+          ui.sidebarOpen = false;
+          render();
+          break;
+        }
         case 'toggle-sidebar':
           ui.sidebarOpen = !ui.sidebarOpen; render(); break;
         case 'close-sidebar':
