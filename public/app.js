@@ -209,6 +209,25 @@
     return `<button class="pill-btn ${active ? 'pill-active' : 'pill-inactive'}" data-action="${action}" data-id="${esc(id)}">${esc(label)}</button>`;
   }
 
+  const STAT_ICONS = {
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    alert: '<path d="M10.3 4.2 2.6 17.5a1.8 1.8 0 0 0 1.55 2.7h15.7a1.8 1.8 0 0 0 1.55-2.7L13.7 4.2a1.8 1.8 0 0 0-3.4 0z"/><path d="M12 10v4"/><path d="M12 17.3h.01"/>',
+    check: '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8.5 11.5 11 14l4.5-5"/>',
+  };
+  function statIcon(name) {
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${STAT_ICONS[name]}</svg>`;
+  }
+  function statTile({ icon, color, value, label }) {
+    return `<div class="stat-tile">
+      <div class="stat-icon" style="background:color-mix(in srgb, ${color} 16%, transparent);color:${color}">${statIcon(icon)}</div>
+      <div>
+        <div class="stat-value">${esc(value)}</div>
+        <div class="stat-label">${esc(label)}</div>
+      </div>
+    </div>`;
+  }
+
   // Inline quick-add panel shown inside a dashboard section when its "+" button
   // is clicked, so the owner can add a to-do/license straight into that clinic's
   // column without going through the full-page form and picking a clinic.
@@ -309,15 +328,16 @@
           <div class="view-title">Dashboard</div>
           <div class="view-subtitle">${s.clinics.length} clinics &middot; ${s.licenses.length} licenses tracked</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span class="chip" style="${chipStyle(STATUS.overdue)}">${overdueCount} overdue</span>
-          <span class="chip" style="${chipStyle(STATUS.critical)}">${criticalCount} due soon</span>
-          <span class="chip" style="color:var(--text-secondary);background:var(--surface-alt)">${openTodoCount} open to-dos</span>
-          <div class="layout-toggle">
-            ${pillBtn({ label: 'Columns', active: layout === 'columns', action: 'set-layout', id: 'columns' })}
-            ${pillBtn({ label: 'List', active: layout === 'list', action: 'set-layout', id: 'list' })}
-          </div>
+        <div class="layout-toggle">
+          ${pillBtn({ label: 'Columns', active: layout === 'columns', action: 'set-layout', id: 'columns' })}
+          ${pillBtn({ label: 'List', active: layout === 'list', action: 'set-layout', id: 'list' })}
         </div>
+      </div>
+      <div class="stat-grid">
+        ${statTile({ icon: 'folder', color: 'var(--accent)', value: s.licenses.length, label: 'Licenses tracked' })}
+        ${statTile({ icon: 'clock', color: STATUS.critical.fg, value: criticalCount, label: 'Due soon' })}
+        ${statTile({ icon: 'alert', color: STATUS.overdue.fg, value: overdueCount, label: 'Overdue' })}
+        ${statTile({ icon: 'check', color: STATUS.ok.fg, value: openTodoCount, label: 'Open to-dos' })}
       </div>`;
 
     if (layout === 'columns') {
@@ -333,13 +353,16 @@
           : items.some((l) => l.statusKey === 'warning') ? 'warning' : 'ok';
 
         const sectionBody = {
-          todo: todos.map((t) => `
-                  <label class="todo-row" style="opacity:${t.done ? 0.5 : 1}">
+          todo: todos.map((t) => {
+            const accent = t.done ? 'var(--border)' : (t.dueDate ? computeStatus(t.dueDate).fg : 'var(--border)');
+            return `
+                  <label class="todo-row" style="opacity:${t.done ? 0.5 : 1};border-left-color:${accent}">
                     <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" />
                     <span style="text-decoration:${t.done ? 'line-through' : 'none'}">${esc(t.text)}</span>
-                  </label>`).join('') || '<div class="empty-note">Nothing pending</div>',
+                  </label>`;
+          }).join('') || '<div class="empty-note">Nothing pending</div>',
           licenses: items.map((l) => `
-                  <div class="license-item">
+                  <div class="license-item" style="border-left-color:${STATUS[l.statusKey].fg}">
                     <div class="license-item-top">
                       <div class="license-item-type">${esc(l.type)}</div>
                       <span class="chip" style="${l.statusStyle}">${l.statusLabel}</span>
@@ -484,7 +507,7 @@
       </div>
       <div class="list-scroll scrollarea">
         ${filtered.map((l) => `
-          <div class="row-card">
+          <div class="row-card" style="border-left-color:${STATUS[l.statusKey].fg}">
             <div>
               <div class="row-title">${esc(l.type)}</div>
               <div class="row-sub">${esc(l.clinicCode)} &middot; ${esc(l.clinicName)} &middot; expires ${l.expiryLabel}${l.notes ? ' &middot; ' + esc(l.notes) : ''}</div>
@@ -522,8 +545,10 @@
       </div>
       <div class="pillbar">${pills.map(pillBtn).join('')}</div>
       <div class="list-scroll scrollarea">
-        ${filtered.map((t) => `
-          <div class="row-card" style="opacity:${t.done ? 0.5 : 1}">
+        ${filtered.map((t) => {
+          const accent = t.done ? 'var(--border)' : (t.dueDate ? computeStatus(t.dueDate).fg : 'var(--border)');
+          return `
+          <div class="row-card" style="opacity:${t.done ? 0.5 : 1};border-left-color:${accent}">
             <label style="display:flex;align-items:center;gap:12px;cursor:pointer;flex:1">
               <input type="checkbox" ${t.done ? 'checked' : ''} data-action="toggle-todo" data-id="${t.id}" style="width:16px;height:16px" />
               <div>
@@ -532,7 +557,8 @@
               </div>
             </label>
             <button class="pill-btn pill-danger" data-action="remove-todo" data-id="${t.id}">Remove</button>
-          </div>`).join('') || '<div class="row-empty">No tasks here.</div>'}
+          </div>`;
+        }).join('') || '<div class="row-empty">No tasks here.</div>'}
       </div>`;
   }
 
