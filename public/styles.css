@@ -40,6 +40,15 @@
   --warn-bg: #2B2113;
   --warn-border: #3D2F1A;
   --warn-text: #D9A454;
+
+  --status-overdue-fg: #E5697A;
+  --status-overdue-bg: #2B1619;
+  --status-critical-fg: #D9A454;
+  --status-critical-bg: #2B2113;
+  --status-warning-fg: #C9B968;
+  --status-warning-bg: #262310;
+  --status-ok-fg: #4CB782;
+  --status-ok-bg: #132A1F;
 }
 
 :root[data-theme="light"] {
@@ -77,6 +86,15 @@
   --warn-bg: #FBF1DF;
   --warn-border: #F0DAA8;
   --warn-text: #9C6B13;
+
+  --status-overdue-fg: #C23B52;
+  --status-overdue-bg: #FBE9EC;
+  --status-critical-fg: #9C6B13;
+  --status-critical-bg: #FBF1DF;
+  --status-warning-fg: #6B7A1F;
+  --status-warning-bg: #F2F6E2;
+  --status-ok-fg: #1F8A4C;
+  --status-ok-bg: #E7F6EE;
 }
 
 :root[data-theme="light"] .sidebar { box-shadow: 1px 0 0 var(--border); }

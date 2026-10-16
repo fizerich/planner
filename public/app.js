@@ -2,10 +2,10 @@
   'use strict';
 
   const STATUS = {
-    overdue: { key: 'overdue', label: 'Overdue', fg: '#E5697A', bg: '#2B1619' },
-    critical: { key: 'critical', label: 'Due soon', fg: '#D9A454', bg: '#2B2113' },
-    warning: { key: 'warning', label: 'Upcoming', fg: '#C9B968', bg: '#262310' },
-    ok: { key: 'ok', label: 'Active', fg: '#4CB782', bg: '#132A1F' },
+    overdue: { key: 'overdue', label: 'Overdue', fg: 'var(--status-overdue-fg)', bg: 'var(--status-overdue-bg)' },
+    critical: { key: 'critical', label: 'Due soon', fg: 'var(--status-critical-fg)', bg: 'var(--status-critical-bg)' },
+    warning: { key: 'warning', label: 'Upcoming', fg: 'var(--status-warning-fg)', bg: 'var(--status-warning-bg)' },
+    ok: { key: 'ok', label: 'Active', fg: 'var(--status-ok-fg)', bg: 'var(--status-ok-bg)' },
   };
   const ACCENT_OPTIONS = ['#5E6AD2', '#4A9B9B', '#BD7295', '#C08B4A'];
   const VIEWS = [
