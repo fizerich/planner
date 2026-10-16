@@ -272,8 +272,31 @@
       </div>`;
   }
 
+  let logoIdCounter = 0;
+  // Inlined (not <img src="icon.svg">) so the gradient can follow the owner's
+  // chosen accent color and the pastel light theme, instead of staying fixed
+  // to one hardcoded indigo regardless of theme/accent — unique gradient ids
+  // are needed since this renders more than once per page (sidebar + topbar).
   function logoMarkup(size) {
-    return `<img src="./icon.svg" width="${size}" height="${size}" style="border-radius:${Math.round(size * 0.22)}px;flex-shrink:0" alt="" />
+    const uid = 'logo' + (++logoIdCounter);
+    return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" style="flex-shrink:0">
+        <defs>
+          <linearGradient id="${uid}-bg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0" style="stop-color:color-mix(in srgb, var(--accent) 55%, white)"/>
+            <stop offset="1" style="stop-color:color-mix(in srgb, var(--accent) 88%, black)"/>
+          </linearGradient>
+          <radialGradient id="${uid}-glow" cx="30" cy="22" r="55" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+            <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="100" height="100" rx="22" fill="url(#${uid}-bg)"/>
+        <rect width="100" height="100" rx="22" fill="url(#${uid}-glow)"/>
+        <rect x="34" y="24" width="40" height="32" rx="7" fill="#fff" opacity=".3" transform="rotate(10 54 40)"/>
+        <rect x="28" y="30" width="42" height="34" rx="7" fill="#fff" opacity=".55" transform="rotate(-5 49 47)"/>
+        <rect x="24" y="38" width="44" height="36" rx="7" fill="#fff"/>
+        <path d="M34 56 L45 67 L68 44" fill="none" style="stroke:color-mix(in srgb, var(--accent) 88%, black)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <span style="font:800 ${Math.round(size * 0.68)}px 'Manrope';letter-spacing:-0.025em">
         <span style="color:var(--text-primary)">Super</span><span style="color:var(--accent)">Planner</span>
       </span>`;
